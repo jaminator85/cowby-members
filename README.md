@@ -1,2 +1,2 @@
-# cowby-members
+# cowboy-members
 golf, family
