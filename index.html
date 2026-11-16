@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카우보이멤버스 - 골프모임 통합 멤버십</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Noto Sans KR & Oswald -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #0b0e0d;
+            color: #f4f4f5;
+            overflow-x: hidden;
+        }
+        .font-display {
+            font-family: 'Oswald', 'Noto Sans KR', sans-serif;
+        }
+        .metallic-card {
+            background: linear-gradient(145deg, #161b19 0%, #0f1311 100%);
+            border: 1px solid #27312c;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.75);
+        }
+        .metallic-header {
+            background: rgba(11, 14, 13, 0.94);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #242e29;
+        }
+        .chrome-text {
+            background: linear-gradient(180deg, #ffffff 0%, #d4d4d8 50%, #71717a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .emerald-metallic-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+            transition: all 0.2s ease;
+        }
+        .emerald-metallic-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+        .steel-btn {
+            background: linear-gradient(145deg, #27272a 0%, #18181b 100%);
+            border: 1px solid #3f3f46;
+            transition: all 0.2s ease;
+        }
+        .steel-btn:hover {
+            border-color: #10b981;
+            background: #272e2b;
+        }
+        .nav-tab {
+            padding: 0.45rem 0.85rem;
+            border-radius: 0.65rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #a1a1aa;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+        }
+        .nav-tab:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .nav-tab.active {
+            color: #34d399;
+            background: rgba(16, 185, 129, 0.14);
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+        .sudoku-cell {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.1s;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #111513; }
+        ::-webkit-scrollbar-thumb { background: #2e3a34; border-radius: 9999px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- 토스트 알림창 -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- 확인 모달 -->
+    <div id="confirm-modal" class="fixed inset-0 z-[90] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="metallic-card rounded-2xl max-w-sm w-full p-6 border border-zinc-700">
+            <h3 id="confirm-title" class="text-lg font-bold text-white mb-2">확인</h3>
+            <p id="confirm-message" class="text-sm text-zinc-300 mb-6 leading-relaxed"></p>
+            <div class="flex justify-end gap-2">
+                <button id="confirm-cancel-btn" type="button" class="px-4 py-2 rounded-xl steel-btn text-zinc-300 text-sm font-semibold">취소</button>
+                <button id="confirm-ok-btn" type="button" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. 최초 로그인 화면 -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_#14261e_0%,_#090b0a_70%)]">
+        <div class="metallic-card rounded-3xl max-w-md w-full p-7 sm:p-9 border border-zinc-800 shadow-2xl">
+            <div class="flex flex-col items-center text-center mb-7">
+                <div id="login-logo-box" class="w-32 h-32 mb-4 flex items-center justify-center drop-shadow-[0_12px_25px_rgba(0,0,0,0.9)]"></div>
+                <span class="px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-700/50 text-emerald-400 text-[11px] font-bold tracking-widest uppercase mb-2">
+                    PREMIUM GOLF CLUB
+                </span>
+                <h1 id="login-site-title" class="text-3xl sm:text-4xl font-black tracking-tight chrome-text">카우보이멤버스</h1>
+                <p class="text-xs text-zinc-400 mt-1.5">정회원 전용 멤버십 라운지 · 승인 회원만 입장 가능</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-zinc-950 border border-zinc-800 mb-6">
+                <button id="tab-login-btn" type="button" onclick="switchAuthTab('login')" class="py-2 text-sm font-bold rounded-lg bg-zinc-800 text-white shadow">
+                    회원 로그인
+                </button>
+                <button id="tab-register-btn" type="button" onclick="switchAuthTab('register')" class="py-2 text-sm font-bold rounded-lg text-zinc-400 hover:text-white">
+                    신규 가입신청
+                </button>
+            </div>
+
+            <!-- 로그인 폼 -->
+            <form id="login-form" class="space-y-4" onsubmit="handleLogin(event)">
+                <div>
+                    <label class="block text-xs font-bold text-zinc-300 mb-1.5">아이디</label>
+                    <input id="login-username" type="text" required placeholder="" value=""
+                           class="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-300 mb-1.5">비밀번호</label>
+                    <input id="login-password" type="password" required placeholder="" value=""
+                           class="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none focus:border-emerald-500">
+                </div>
+                <button type="submit" class="w-full py-3.5 rounded-xl emerald-metallic-btn text-white font-black text-sm tracking-wide mt-2">
+                    멤버십 입장하기
+                </button>
+            </form>
+
+            <!-- 회원가입 폼 -->
+            <form id="register-form" class="hidden space-y-3" onsubmit="handleRegister(event)">
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-[11px] font-bold text-zinc-400 mb-1">사용할 아이디 *</label>
+                        <input id="reg-username" type="text" required placeholder="영문/숫자"
+                               class="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-zinc-400 mb-1">비밀번호 *</label>
+                        <input id="reg-password" type="password" required placeholder="비밀번호"
+                               class="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-[11px] font-bold text-zinc-400 mb-1">성함 (실명) *</label>
+                        <input id="reg-name" type="text" required placeholder="홍길동"
+                               class="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-zinc-400 mb-1">전화번호 *</label>
+                        <input id="reg-phone" type="tel" required placeholder="010-0000-0000"
+                               class="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-[11px] font-bold text-zinc-400 mb-1">회사명 / 직책</label>
+                        <input id="reg-company" type="text" placeholder="(주)카우보이 / 대표"
+                               class="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-zinc-400 mb-1">가족관계</label>
+                        <input id="reg-family" type="text" placeholder="기혼"
+                               class="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none">
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl emerald-metallic-btn text-white font-bold text-sm mt-2">
+                    가입 승인 요청하기
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. 로그인 후 메인 애플리케이션 -->
+    <div id="main-app" class="hidden flex-1 flex flex-col">
+        <header class="metallic-header sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+                <button type="button" onclick="switchSection('home')" class="flex items-center gap-3 text-left shrink-0 group">
+                    <div id="header-logo-box" class="w-11 h-11 rounded-xl bg-zinc-900 border border-zinc-700/80 flex items-center justify-center overflow-hidden shadow-md"></div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span id="header-site-title" class="text-lg sm:text-xl font-black tracking-tight chrome-text whitespace-nowrap">카우보이멤버스</span>
+                            <span class="hidden sm:inline-block px-2 py-0.5 rounded-md bg-emerald-950 border border-emerald-700/50 text-emerald-400 text-[10px] font-bold whitespace-nowrap">GOLF CLUB</span>
+                        </div>
+                    </div>
+                </button>
+
+                <nav id="main-nav" class="hidden lg:flex items-center gap-1.5 overflow-x-auto py-1"></nav>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" onclick="openProfileModal()" class="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 transition">
+                        <img id="header-user-avatar" src="" alt="프로필" class="w-7 h-7 rounded-full object-cover border border-emerald-500/60 bg-zinc-800">
+                        <span id="header-user-name" class="text-xs font-bold text-white whitespace-nowrap max-w-[110px] truncate">회원</span>
+                        <span id="header-admin-badge" class="hidden px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 text-[10px] font-black whitespace-nowrap">총무</span>
+                    </button>
+                    <button type="button" onclick="logoutUser()" class="px-3 py-2 rounded-xl steel-btn text-zinc-300 hover:text-white text-xs font-bold whitespace-nowrap">
+                        로그아웃
+                    </button>
+                </div>
+            </div>
+            <div id="mobile-nav" class="lg:hidden flex items-center gap-1.5 px-4 pb-2.5 overflow-x-auto border-t border-zinc-800/60 pt-2"></div>
+        </header>
+
+        <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-8">
+            <!-- 섹션 1: 홈 -->
+            <section id="sec-home" class="app-section space-y-8">
+                <!-- 공지사항 -->
+                <div class="metallic-card rounded-2xl p-5 sm:p-6 border border-emerald-900/50">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div class="flex items-center gap-2.5">
+                            <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-xs font-black">📢 공지사항</span>
+                            <h2 class="text-lg sm:text-xl font-black text-white">카우보이멤버스 주요 안내</h2>
+                        </div>
+                        <button type="button" onclick="toggleNoticeForm()" class="px-3.5 py-2 rounded-xl emerald-metallic-btn text-white text-xs font-bold whitespace-nowrap">
+                            + 새 공지 등록
+                        </button>
+                    </div>
+
+                    <form id="notice-form" class="hidden mb-5 p-4 rounded-xl bg-zinc-950/90 border border-zinc-800 space-y-3" onsubmit="handleSaveNotice(event)">
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input id="notice-title" type="text" required placeholder="공지 제목을 입력하세요"
+                                   class="flex-1 px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-white text-sm focus:outline-none">
+                            <label id="notice-pin-wrap" class="hidden flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-amber-300 font-bold cursor-pointer">
+                                <input id="notice-pinned" type="checkbox" class="accent-amber-400"> 상단 중요 고정
+                            </label>
+                        </div>
+                        <textarea id="notice-content" rows="2" required placeholder="공지 내용을 입력하세요..."
+                                  class="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-white text-sm focus:outline-none"></textarea>
+                        <div class="flex justify-end gap-2">
+                            <button type="button" onclick="toggleNoticeForm()" class="px-4 py-2 rounded-xl steel-btn text-xs text-zinc-300 font-bold">취소</button>
+                            <button type="submit" class="px-4 py-2 rounded-xl emerald-metallic-btn text-xs text-white font-bold">공지 저장하기</button>
+                        </div>
+                    </form>
+                    <div id="notices-list" class="space-y-2.5"></div>
+                </div>
+
+                <!-- 라운드 스케줄 -->
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-black text-white">📅 다가오는 라운드 스케줄</h2>
+                            <p class="text-xs text-zinc-400 mt-0.5">참석 버튼을 눌러 참가 여부를 확정하세요.</p>
+                        </div>
+                        <button type="button" onclick="switchSection('schedule')" class="px-3.5 py-2 rounded-xl steel-btn text-xs font-bold text-emerald-400 whitespace-nowrap">
+                            일정 등록 / 전체보기 →
+                        </button>
+                    </div>
+                    <div id="home-schedule-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+
+                <!-- 필드 사진첩 -->
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-black text-white">📸 최근 필드 사진첩</h2>
+                            <p class="text-xs text-zinc-400 mt-0.5">라운딩 추억을 공유하세요.</p>
+                        </div>
+                        <button type="button" onclick="switchSection('gallery')" class="px-3.5 py-2 rounded-xl steel-btn text-xs font-bold text-emerald-400 whitespace-nowrap">
+                            사진 올리기 / 전체보기 →
+                        </button>
+                    </div>
+                    <div id="home-gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </div>
+            </section>
+
+            <!-- 섹션 2: 조편성 & 게임 -->
+            <section id="sec-games" class="app-section hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+                    <div>
+                        <h2 class="text-2xl sm:text-3xl font-black text-white">조편성 &amp; 미니게임</h2>
+                        <p class="text-xs sm:text-sm text-zinc-400 mt-1">30초 사다리타기 조편성과 테트리스 · 스도쿠 최고 점수가 실시간으로 저장됩니다.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- 사다리타기 -->
+                    <div class="metallic-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="px-3 py-1 rounded-lg bg-emerald-950 border border-emerald-700/60 text-emerald-400 text-xs font-black">30초 사다리타기</span>
+                            <span id="ladder-timer" class="text-xl font-black text-amber-400 font-display">30.0초</span>
+                        </div>
+                        <div class="space-y-2.5">
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-300 mb-1">참가 회원 (쉼표 구분)</label>
+                                <input id="ladder-players-input" type="text" value="김총무, 박프로, 이싱글, 최버디, 정이글, 강파온"
+                                       class="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none">
+                            </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <label class="text-xs font-bold text-zinc-300 whitespace-nowrap">편성 조 수:</label>
+                                    <select id="ladder-teams-select" class="px-3 py-1.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-xs font-bold">
+                                        <option value="2">2개 조 (1조~2조)</option>
+                                        <option value="3">3개 조 (1조~3조)</option>
+                                        <option value="4">4개 조 (1조~4조)</option>
+                                    </select>
+                                </div>
+                                <button type="button" onclick="loadApprovedPlayersToLadder()" class="text-xs font-bold text-emerald-400 hover:underline">승인회원 불러오기</button>
+                            </div>
+                        </div>
+                        <div class="relative w-full h-64 rounded-xl bg-zinc-950 border border-zinc-800 overflow-hidden">
+                            <canvas id="ladder-canvas" class="w-full h-full block"></canvas>
+                        </div>
+                        <div id="ladder-result-box" class="hidden p-3.5 rounded-xl bg-emerald-950/50 border border-emerald-700/60 text-xs text-emerald-200 space-y-1"></div>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <button id="start-ladder-btn" type="button" class="py-3 rounded-xl emerald-metallic-btn text-white font-black text-sm">30초 사다리 시작</button>
+                            <button id="instant-ladder-btn" type="button" class="py-3 rounded-xl steel-btn text-zinc-200 font-bold text-sm">빠른 결과 (2초)</button>
+                        </div>
+                    </div>
+
+                    <!-- 테트리스 -->
+                    <div class="metallic-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="px-3 py-1 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-200 text-xs font-black">메탈 테트리스</span>
+                            <div class="text-sm font-black text-zinc-300">SCORE: <span id="tetris-score" class="text-emerald-400 text-lg">0</span></div>
+                        </div>
+                        <div class="flex items-center justify-center gap-4 bg-zinc-950 rounded-xl p-3 border border-zinc-800">
+                            <canvas id="tetris-canvas" width="200" height="360" class="rounded-lg border border-zinc-800 bg-black"></canvas>
+                            <div class="flex flex-col items-center gap-3">
+                                <span class="text-[11px] font-bold text-zinc-400">NEXT</span>
+                                <canvas id="tetris-next-canvas" width="76" height="76" class="rounded-lg border border-zinc-800 bg-zinc-900"></canvas>
+                                <button type="button" onclick="startTetris()" class="w-full py-2.5 px-3 rounded-xl emerald-metallic-btn text-white text-xs font-black">게임 시작</button>
+                                <button type="button" onclick="saveTetrisScore()" class="w-full py-2 px-3 rounded-xl steel-btn text-zinc-300 text-xs font-bold">점수 저장</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-5 gap-2">
+                            <button type="button" onclick="tetrisMove(-1)" class="py-2.5 rounded-xl steel-btn text-white font-bold text-sm">◀</button>
+                            <button type="button" onclick="tetrisRotate()" class="py-2.5 rounded-xl steel-btn text-white font-bold text-xs">↻ 회전</button>
+                            <button type="button" onclick="tetrisSoftDrop()" class="py-2.5 rounded-xl steel-btn text-white font-bold text-sm">▼</button>
+                            <button type="button" onclick="tetrisHardDrop()" class="py-2.5 rounded-xl emerald-metallic-btn text-white font-black text-xs">▼▼</button>
+                            <button type="button" onclick="tetrisMove(1)" class="py-2.5 rounded-xl steel-btn text-white font-bold text-sm">▶</button>
+                        </div>
+                        <p class="text-[11px] text-center text-zinc-500">방향키: 이동/회전 · Space: 빨리 내리기</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- 스도쿠 -->
+                    <div class="metallic-card rounded-2xl p-5 space-y-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="px-3 py-1 rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-black">🧩 9×9 스도쿠</span>
+                                <span id="sudoku-timer" class="text-xs font-bold text-zinc-400">00:00</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <select id="sudoku-diff" onchange="startSudokuGame()" class="px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-white font-bold">
+                                    <option value="easy">초급 (+30P)</option>
+                                    <option value="medium" selected>중급 (+50P)</option>
+                                    <option value="hard">고급 (+80P)</option>
+                                </select>
+                                <button type="button" onclick="giveSudokuHint()" class="px-2.5 py-1.5 rounded-lg steel-btn text-xs text-amber-300 font-bold">💡 힌트</button>
+                                <button type="button" onclick="startSudokuGame()" class="px-2.5 py-1.5 rounded-lg steel-btn text-xs text-zinc-300 font-bold">새 게임</button>
+                            </div>
+                        </div>
+                        <div id="sudoku-grid" class="max-w-[340px] mx-auto grid grid-cols-9 border-2 border-emerald-500/70 rounded-lg overflow-hidden bg-zinc-950"></div>
+                        <div class="max-w-[340px] mx-auto grid grid-cols-5 gap-1.5">
+                            <button type="button" onclick="inputSudokuNum(1)" class="py-2 rounded-lg steel-btn text-white font-black text-sm">1</button>
+                            <button type="button" onclick="inputSudokuNum(2)" class="py-2 rounded-lg steel-btn text-white font-black text-sm">2</button>
+                            <button type="button" onclick="inputSudokuNum(3)" class="py-2 rounded-lg steel-btn text-white font-black text-sm">3</button>
+                            <button type="button" onclick="inputSudokuNum(4)" class="py-2 rounded-lg steel-btn text-white font-black text-sm">4</button>
+                            <button type="button" onclick="inputSudokuNum(5)" class="py-2 rounded-lg steel-btn text-white font-black text-sm">5</button>
+                            <button type="button" onclick="inputSudokuNum(6)" class="py-2 rounded-lg steel-btn text-white font-black text-sm">6</button>
+                            <button type="button" onclick="inputSudokuNum(7)" class="py-2 rounded-lg steel-btn text-white font-black text-sm">7</button>
+                            <button type="button" onclick="inputSudokuNum(8)" class="py-2 rounded-lg steel-btn text-white font-black text-sm">8</button>
+                            <button type="button" onclick="inputSudokuNum(9)" class="py-2 rounded-lg steel-btn text-white font-black text-sm">9</button>
+                            <button type="button" onclick="inputSudokuNum(0)" class="py-2 rounded-lg bg-red-950/60 border border-red-800/50 text-red-300 font-bold text-xs">지우기</button>
+                        </div>
+                    </div>
+
+                    <!-- 랭킹 & 기록 -->
+                    <div class="metallic-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="text-base font-black text-white">🏆 실시간 스코어 랭킹</h3>
+                                <span class="text-[11px] text-emerald-400 font-bold">점수 자동 합산</span>
+                            </div>
+                            <div id="game-ranking-list" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+                        </div>
+                        <div class="border-t border-zinc-800 pt-4">
+                            <h4 class="text-xs font-bold text-zinc-400 mb-2.5">📋 최근 게임 및 조편성 저장 기록 (본인 삭제 가능)</h4>
+                            <div id="game-records-list" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 섹션 3: 일정 -->
+            <section id="sec-schedule" class="app-section hidden space-y-6">
+                <div>
+                    <h2 class="text-2xl font-black text-white">📅 카우보이멤버스 라운드 스케줄</h2>
+                    <p class="text-xs text-zinc-400 mt-1">정기 라운딩 및 번개 일정을 관리합니다.</p>
+                </div>
+                <form id="schedule-form" class="metallic-card rounded-2xl p-5 space-y-3" onsubmit="handleSaveSchedule(event)">
+                    <h3 class="text-sm font-bold text-emerald-400">+ 새 라운드 일정 등록</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <input id="sch-title" type="text" required placeholder="일정 제목 (예: 정기 라운딩)" class="px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none">
+                        <input id="sch-date" type="datetime-local" required class="px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none">
+                        <input id="sch-place" type="text" required placeholder="골프장명 (예: 남서울CC)" class="px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none">
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input id="sch-note" type="text" placeholder="티오프 시간, 회비 안내 등" class="flex-1 px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none">
+                        <button type="submit" class="px-5 py-2.5 rounded-xl emerald-metallic-btn text-white font-bold text-sm whitespace-nowrap">일정 등록하기</button>
+                    </div>
+                </form>
+                <div id="schedule-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </section>
+
+            <!-- 섹션 4: 사진첩 -->
+            <section id="sec-gallery" class="app-section hidden space-y-6">
+                <div>
+                    <h2 class="text-2xl font-black text-white">📸 필드 사진첩</h2>
+                    <p class="text-xs text-zinc-400 mt-1">모임 사진을 업로드하고 추억을 공유하세요.</p>
+                </div>
+                <form id="gallery-form" class="metallic-card rounded-2xl p-5 space-y-3" onsubmit="handleSaveGallery(event)">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input id="gal-caption" type="text" required placeholder="사진 제목 또는 라운딩 한줄평" class="px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none">
+                        <input id="gal-file" type="file" accept="image/*" required class="px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-xs">
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="px-5 py-2.5 rounded-xl emerald-metallic-btn text-white font-bold text-sm">사진 저장하기</button>
+                    </div>
+                </form>
+                <div id="gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+            </section>
+
+            <!-- 섹션 5: 회원수첩 -->
+            <section id="sec-members" class="app-section hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-2xl font-black text-white">👥 카우보이멤버스 회원수첩</h2>
+                        <p class="text-xs text-zinc-400 mt-1">승인된 정회원들의 프로필 정보입니다.</p>
+                    </div>
+                    <button type="button" onclick="openProfileModal()" class="px-4 py-2 rounded-xl emerald-metallic-btn text-white font-bold text-xs">내 프로필 수정하기</button>
+                </div>
+                <div id="members-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </section>
+
+            <!-- 섹션 6: 총무관리 -->
+            <section id="sec-admin" class="app-section hidden space-y-6">
+                <div>
+                    <h2 class="text-2xl font-black text-amber-400">👑 총무 통합 관리실</h2>
+                    <p class="text-xs text-zinc-400 mt-1">신규 회원가입 승인 및 폴더(메뉴), 임원진 권한을 총괄 관리합니다.</p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="metallic-card rounded-2xl p-5 space-y-6">
+                        <div>
+                            <h3 class="text-base font-bold text-white mb-3">회원가입 승인 및 관리 (임원 1인 이상 승인 시 통과)</h3>
+                            <div id="admin-users-list" class="space-y-3 max-h-[300px] overflow-y-auto pr-1"></div>
+                        </div>
+                        <div class="border-t border-zinc-800 pt-4">
+                            <h3 class="text-base font-bold text-amber-300 mb-2">⭐ 임원진(회장·총무·재무) 권한 지정</h3>
+                            <p class="text-[11px] text-zinc-400 mb-3">메뉴 및 관리 권한을 가질 임원진을 지정하세요. (총무 포함 최대 3인)</p>
+                            <div id="admin-role-assign-list" class="space-y-2 max-h-[220px] overflow-y-auto pr-1"></div>
+                        </div>
+                    </div>
+                    <div class="metallic-card rounded-2xl p-5 space-y-5">
+                        <h3 class="text-base font-bold text-white">타이틀 및 폴더(메뉴) 관리</h3>
+                        <div class="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2">
+                            <label class="block text-xs font-bold text-emerald-400">+ 새 폴더(게시판) 추가</label>
+                            <div class="flex gap-2">
+                                <input id="new-folder-name" type="text" placeholder="예: 💰 회비장부" class="flex-1 px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-white text-xs focus:outline-none">
+                                <button type="button" onclick="addCustomFolder()" class="px-4 py-2 rounded-xl emerald-metallic-btn text-white text-xs font-bold whitespace-nowrap">폴더 추가</button>
+                            </div>
+                        </div>
+                        <form id="admin-menu-form" class="space-y-4" onsubmit="handleSaveConfig(event)">
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-400 mb-1">모임 홈페이지 타이틀</label>
+                                <input id="cfg-site-title" type="text" required class="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2.5">
+                                <div><label class="block text-[11px] font-bold text-zinc-400 mb-1">홈 폴더명</label><input id="cfg-menu-home" type="text" class="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-xs"></div>
+                                <div><label class="block text-[11px] font-bold text-zinc-400 mb-1">게임 폴더명</label><input id="cfg-menu-games" type="text" class="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-xs"></div>
+                                <div><label class="block text-[11px] font-bold text-zinc-400 mb-1">일정 폴더명</label><input id="cfg-menu-schedule" type="text" class="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-xs"></div>
+                                <div><label class="block text-[11px] font-bold text-zinc-400 mb-1">사진첩 폴더명</label><input id="cfg-menu-gallery" type="text" class="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-xs"></div>
+                                <div class="col-span-2"><label class="block text-[11px] font-bold text-zinc-400 mb-1">회원수첩 폴더명</label><input id="cfg-menu-members" type="text" class="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-xs"></div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-300 mb-2">추가된 커스텀 폴더 관리</label>
+                                <div id="custom-folders-admin-list" class="space-y-2"></div>
+                            </div>
+                            <button type="submit" class="w-full py-2.5 rounded-xl emerald-metallic-btn text-white font-bold text-sm">설정 저장하기</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 섹션 7: 커스텀 폴더 게시판 -->
+            <section id="sec-custom-folder" class="app-section hidden space-y-6">
+                <div>
+                    <h2 id="custom-folder-heading" class="text-2xl font-black text-white">게시판</h2>
+                    <p class="text-xs text-zinc-400 mt-1">게시글과 사진을 자유롭게 공유하세요.</p>
+                </div>
+                <form id="custom-post-form" class="metallic-card rounded-2xl p-5 space-y-3" onsubmit="handleSaveCustomPost(event)">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input id="cp-title" type="text" required placeholder="게시글 제목" class="px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none">
+                        <input id="cp-file" type="file" accept="image/*" class="px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-xs">
+                    </div>
+                    <textarea id="cp-content" rows="2" required placeholder="내용을 입력하세요..." class="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:outline-none"></textarea>
+                    <div class="flex justify-end">
+                        <button type="submit" class="px-5 py-2.5 rounded-xl emerald-metallic-btn text-white font-bold text-sm">게시글 저장</button>
+                    </div>
+                </form>
+                <div id="custom-folder-posts-list" class="space-y-3"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 프로필 수정 모달 -->
+    <div id="profile-modal" class="fixed inset-0 z-[80] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="metallic-card rounded-3xl max-w-md w-full p-6 border border-zinc-700 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-black text-white">내 프로필 정보 및 계정 관리</h3>
+                <button type="button" onclick="closeProfileModal()" class="text-zinc-400 hover:text-white text-xl font-bold">✕</button>
+            </div>
+            <form id="profile-form" class="space-y-3.5" onsubmit="handleSaveProfile(event)">
+                <div class="flex items-center gap-4 p-3 rounded-2xl bg-zinc-950 border border-zinc-800">
+                    <img id="prof-preview" src="" alt="미리보기" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-500 bg-zinc-800">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-zinc-300 mb-1">프로필 사진 변경</label>
+                        <input id="prof-file" type="file" accept="image/*" onchange="previewAvatar(event)" class="text-xs text-zinc-400">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-bold text-zinc-400 mb-1">아이디 변경 *</label><input id="prof-username" type="text" required class="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm"></div>
+                    <div><label class="block text-xs font-bold text-zinc-400 mb-1">새 비밀번호 (변경시만)</label><input id="prof-password" type="password" placeholder="미입력시 유지" class="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-bold text-zinc-400 mb-1">성함 *</label><input id="prof-name" type="text" required class="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm"></div>
+                    <div><label class="block text-xs font-bold text-zinc-400 mb-1">전화번호 *</label><input id="prof-phone" type="tel" required class="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-bold text-zinc-400 mb-1">회사명 / 직책</label><input id="prof-company" type="text" class="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm"></div>
+                    <div><label class="block text-xs font-bold text-zinc-400 mb-1">가족관계</label><input id="prof-family" type="text" class="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm"></div>
+                </div>
+                <div><label class="block text-xs font-bold text-zinc-400 mb-1">인사말</label><input id="prof-bio" type="text" class="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm"></div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeProfileModal()" class="px-4 py-2.5 rounded-xl steel-btn text-zinc-300 text-xs font-bold">닫기</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl emerald-metallic-btn text-white text-xs font-black">저장하기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 고디테일 3D 메탈릭 황소 엠블럼 SVG
+        const BULL_EMBLEM_SVG = `
+        <svg viewBox="0 0 200 200" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="chromeMain" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="30%" stop-color="#d4d4d8"/>
+                    <stop offset="65%" stop-color="#52525b"/>
+                    <stop offset="100%" stop-color="#18181b"/>
+                </linearGradient>
+                <linearGradient id="chromeDark" x1="100%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#a1a1aa"/>
+                    <stop offset="50%" stop-color="#3f3f46"/>
+                    <stop offset="100%" stop-color="#09090b"/>
+                </linearGradient>
+                <linearGradient id="hornGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#3f3f46"/>
+                    <stop offset="45%" stop-color="#e4e4e7"/>
+                    <stop offset="85%" stop-color="#ffffff"/>
+                    <stop offset="100%" stop-color="#71717a"/>
+                </linearGradient>
+            </defs>
+            <circle cx="100" cy="105" r="78" fill="#111413" stroke="url(#chromeMain)" stroke-width="5"/>
+            <circle cx="100" cy="105" r="69" fill="none" stroke="#3f3f46" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <path d="M62 76 C32 68, 16 44, 24 18 C34 40, 48 52, 74 58 Z" fill="url(#hornGrad)" stroke="#18181b" stroke-width="1.5"/>
+            <path d="M138 76 C168 68, 184 44, 176 18 C166 40, 152 52, 126 58 Z" fill="url(#hornGrad)" stroke="#18181b" stroke-width="1.5"/>
+            <path d="M60 80 L38 86 L54 98 Z" fill="url(#chromeDark)"/>
+            <path d="M140 80 L162 86 L146 98 Z" fill="url(#chromeDark)"/>
+            <path d="M100 54 L66 64 L58 98 L72 134 L84 156 L100 160 Z" fill="url(#chromeMain)"/>
+            <path d="M100 54 L134 64 L142 98 L128 134 L116 156 L100 160 Z" fill="url(#chromeDark)"/>
+            <polygon points="100,56 76,68 100,92 124,68" fill="#e4e4e7" opacity="0.35"/>
+            <polygon points="68,94 88,101 73,104" fill="#ef4444"/>
+            <polygon points="132,94 112,101 127,104" fill="#ef4444"/>
+            <path d="M80 134 Q100 126 120 134 L115 156 Q100 162 85 156 Z" fill="#27272a" stroke="url(#chromeMain)" stroke-width="2"/>
+            <ellipse cx="91" cy="146" rx="4" ry="5" fill="#09090b"/>
+            <ellipse cx="109" cy="146" rx="4" ry="5" fill="#09090b"/>
+            <path d="M86 154 A15 15 0 1 0 114 154" fill="none" stroke="url(#chromeMain)" stroke-width="4.5" stroke-linecap="round"/>
+        </svg>`;
+
+        document.getElementById('login-logo-box').innerHTML = BULL_EMBLEM_SVG;
+        document.getElementById('header-logo-box').innerHTML = BULL_EMBLEM_SVG;
+
+        // 로컬스토리지 기반 데이터 관리
+        const STORAGE_KEY = 'cowboy_members_db_v1';
+        let dbData = {
+            users: {
+                'jaminator85': {
+                    username: 'jaminator85',
+                    password: 'park4705!!',
+                    name: '박총무',
+                    phone: '010-0000-0000',
+                    company: '카우보이멤버스 총무',
+                    family: '',
+                    bio: '카우보이멤버스 골프모임 총무입니다.',
+                    role: 'admin',
+                    approved: true,
+                    avatar: '',
+                    createdAt: Date.now()
+                }
+            },
+            notices: [],
+            schedules: [],
+            gallery: [],
+            gameRecords: [],
+            customPosts: [],
+            config: {
+                siteTitle: '카우보이멤버스',
+                menus: { home: '🏠 홈', games: '🎮 조편성&게임', schedule: '📅 일정', gallery: '📸 사진첩', members: '👥 회원수첩' },
+                customFolders: []
+            }
+        };
+
+        function loadData() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    dbData = { ...dbData, ...parsed };
+                } else {
+                    saveData();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(dbData));
+            } catch (e) { console.error(e); }
+        }
+
+        loadData();
+
+        let currentUser = null;
+        let activeCustomFolderId = null;
+
+        // 토스트 알림
+        window.showToast = (msg, type = 'info') => {
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            const colors = {
+                success: 'bg-emerald-950 border-emerald-500 text-emerald-200',
+                error: 'bg-red-950 border-red-500 text-red-200',
+                info: 'bg-zinc-900 border-zinc-600 text-zinc-100'
+            };
+            el.className = `px-4 py-3 rounded-xl border shadow-xl text-xs font-bold backdrop-blur-md transition-all ${colors[type] || colors.info}`;
+            el.textContent = msg;
+            container.appendChild(el);
+            setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+        };
+
+        window.showConfirm = (title, message) => {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('confirm-modal');
+                document.getElementById('confirm-title').textContent = title;
+                document.getElementById('confirm-message').textContent = message;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+
+                const cleanup = (res) => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                    resolve(res);
+                };
+                document.getElementById('confirm-ok-btn').onclick = () => cleanup(true);
+                document.getElementById('confirm-cancel-btn').onclick = () => cleanup(false);
+            });
+        };
+
+        function compressImage(file, maxWidth = 800, quality = 0.72) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let w = img.width, h = img.height;
+                        if (w > maxWidth) { h = Math.round(h * (maxWidth / w)); w = maxWidth; }
+                        canvas.width = w;
+                        canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function getAvatarUrl(user) {
+            if (user && user.avatar) return user.avatar;
+            const letter = encodeURIComponent((user?.name || 'M').slice(0, 1));
+            return `https://placehold.co/120x120/18181b/10b981?text=${letter}`;
+        }
+
+        // 로그인 / 회원가입
+        window.switchAuthTab = (tab) => {
+            const isLogin = tab === 'login';
+            document.getElementById('login-form').classList.toggle('hidden', !isLogin);
+            document.getElementById('register-form').classList.toggle('hidden', isLogin);
+            document.getElementById('tab-login-btn').className = isLogin ? 'py-2 text-sm font-bold rounded-lg bg-zinc-800 text-white shadow' : 'py-2 text-sm font-bold rounded-lg text-zinc-400';
+            document.getElementById('tab-register-btn').className = !isLogin ? 'py-2 text-sm font-bold rounded-lg bg-zinc-800 text-white shadow' : 'py-2 text-sm font-bold rounded-lg text-zinc-400';
+        };
+
+        window.handleLogin = (e) => {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            loadData();
+            const user = dbData.users[username];
+            if (!user) {
+                showToast("존재하지 않는 아이디입니다.", "error");
+                return;
+            }
+            if (user.password !== password) {
+                showToast("비밀번호가 일치하지 않습니다.", "error");
+                return;
+            }
+            if (!user.approved && username !== 'jaminator85') {
+                showToast("총무님의 가입 승인을 기다리고 있는 계정입니다.", "error");
+                return;
+            }
+            loginSuccess(user);
+        };
+
+        window.handleRegister = (e) => {
+            e.preventDefault();
+            const username = document.getElementById('reg-username').value.trim();
+            const password = document.getElementById('reg-password').value.trim();
+            loadData();
+            if (dbData.users[username]) {
+                showToast("이미 사용 중인 아이디입니다.", "error");
+                return;
+            }
+            dbData.users[username] = {
+                username,
+                password,
+                name: document.getElementById('reg-name').value.trim(),
+                phone: document.getElementById('reg-phone').value.trim(),
+                company: document.getElementById('reg-company').value.trim(),
+                family: document.getElementById('reg-family').value.trim(),
+                bio: '',
+                role: 'member',
+                approved: false,
+                avatar: '',
+                createdAt: Date.now()
+            };
+            saveData();
+            showToast("회원가입 신청이 완료되었습니다. 총무 승인 후 로그인하세요!", "success");
+            document.getElementById('register-form').reset();
+            switchAuthTab('login');
+        };
+
+        function loginSuccess(userData) {
+            currentUser = userData;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            updateHeaderProfileUI();
+            applySiteConfigUI();
+            renderAll();
+            switchSection('home');
+            showToast(`${userData.name}님, 환영합니다!`, "success");
+        }
+
+        window.logoutUser = () => {
+            currentUser = null;
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            showToast("로그아웃 되었습니다.", "info");
+        };
+
+        function updateHeaderProfileUI() {
+            if (!currentUser) return;
+            document.getElementById('header-user-name').textContent = `${currentUser.name} (${currentUser.username})`;
+            document.getElementById('header-user-avatar').src = getAvatarUrl(currentUser);
+            const isAdmin = currentUser.username === 'jaminator85' || currentUser.role === 'admin' || currentUser.role === 'president' || currentUser.role === 'treasurer';
+            const badgeEl = document.getElementById('header-admin-badge');
+            badgeEl.classList.toggle('hidden', !isAdmin);
+            if (currentUser.role === 'president') badgeEl.textContent = '회장';
+            else if (currentUser.role === 'treasurer') badgeEl.textContent = '재무';
+            else if (currentUser.username === 'jaminator85' || currentUser.role === 'admin') badgeEl.textContent = '총무';
+            
+            document.getElementById('notice-pin-wrap').classList.toggle('hidden', !isAdmin);
+        }
+
+        window.switchSection = (secKey, customFolderId = null) => {
+            document.querySelectorAll('.app-section').forEach(el => el.classList.add('hidden'));
+            if (secKey === 'custom-folder' && customFolderId) {
+                activeCustomFolderId = customFolderId;
+                const folderObj = (dbData.config.customFolders || []).find(f => f.id === customFolderId);
+                document.getElementById('custom-folder-heading').textContent = folderObj ? folderObj.name : '게시판';
+                document.getElementById('sec-custom-folder').classList.remove('hidden');
+                renderCustomFolderPosts();
+            } else {
+                activeCustomFolderId = null;
+                const target = document.getElementById(`sec-${secKey}`);
+                if (target) target.classList.remove('hidden');
+            }
+
+            document.querySelectorAll('#main-nav .nav-tab').forEach(btn => {
+                const isMatch = secKey === 'custom-folder' ? btn.dataset.folderId === customFolderId : btn.dataset.sec === secKey;
+                btn.classList.toggle('active', isMatch);
+            });
+            document.querySelectorAll('#mobile-nav .mob-tab').forEach(btn => {
+                const active = secKey === 'custom-folder' ? btn.dataset.folderId === customFolderId : btn.dataset.sec === secKey;
+                btn.classList.toggle('bg-emerald-950', active);
+                btn.classList.toggle('text-emerald-400', active);
+                btn.classList.toggle('text-zinc-400', !active);
+            });
+
+            if (secKey === 'games') {
+                setTimeout(() => {
+                    initLadderCanvas();
+                    drawTetris();
+                    if (sudokuBoard.length === 0) startSudokuGame();
+                }, 40);
+            }
+        };
+
+        function applySiteConfigUI() {
+            const config = dbData.config;
+            document.getElementById('login-site-title').textContent = config.siteTitle;
+            document.getElementById('header-site-title').textContent = config.siteTitle;
+
+            const isAdmin = currentUser && (currentUser.username === 'jaminator85' || currentUser.role === 'admin' || currentUser.role === 'president' || currentUser.role === 'treasurer');
+            const baseItems = [
+                { key: 'home', label: config.menus.home },
+                { key: 'games', label: config.menus.games },
+                { key: 'schedule', label: config.menus.schedule },
+                { key: 'gallery', label: config.menus.gallery },
+                { key: 'members', label: config.menus.members }
+            ];
+            const customItems = (config.customFolders || []).map(f => ({ key: 'custom-folder', folderId: f.id, label: f.name }));
+            const allItems = [...baseItems, ...customItems];
+            if (isAdmin) allItems.push({ key: 'admin', label: '👑 총무관리', isAdminTab: true });
+
+            document.getElementById('main-nav').innerHTML = allItems.map(i => `
+                <button type="button" data-sec="${i.key}" ${i.folderId ? `data-folder-id="${i.folderId}"` : ''}
+                        onclick="switchSection('${i.key}'${i.folderId ? `, '${i.folderId}'` : ''})" class="nav-tab ${i.isAdminTab ? '!text-amber-400' : ''}">${i.label}</button>
+            `).join('');
+
+            document.getElementById('mobile-nav').innerHTML = allItems.map(i => `
+                <button type="button" data-sec="${i.key}" ${i.folderId ? `data-folder-id="${i.folderId}"` : ''}
+                        onclick="switchSection('${i.key}'${i.folderId ? `, '${i.folderId}'` : ''})" class="mob-tab px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap text-zinc-400">${i.label}</button>
+            `).join('');
+
+            document.getElementById('cfg-site-title').value = config.siteTitle;
+            document.getElementById('cfg-menu-home').value = config.menus.home;
+            document.getElementById('cfg-menu-games').value = config.menus.games;
+            document.getElementById('cfg-menu-schedule').value = config.menus.schedule;
+            document.getElementById('cfg-menu-gallery').value = config.menus.gallery;
+            document.getElementById('cfg-menu-members').value = config.menus.members;
+            renderCustomFoldersAdminList();
+            renderAdminUsersList();
+            renderAdminRoleAssignList();
+        }
+
+        // 회원 승인 관리 및 임원 권한 지정
+        function renderAdminUsersList() {
+            const list = document.getElementById('admin-users-list');
+            const users = Object.values(dbData.users);
+            list.innerHTML = users.map(u => `
+                <div class="p-3.5 rounded-xl bg-zinc-950 border ${u.approved ? 'border-zinc-800' : 'border-amber-500/50'} flex items-center justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-sm text-white">${u.name}</span>
+                            <span class="text-xs text-zinc-400">(${u.username})</span>
+                            ${u.username === 'jaminator85' || u.role === 'admin' ? '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-black">총무</span>' : u.role === 'president' ? '<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-black">회장</span>' : u.role === 'treasurer' ? '<span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[10px] font-black">재무</span>' : u.approved ? '<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 text-[10px] font-bold">승인</span>' : '<span class="px-2 py-0.5 rounded bg-amber-950 text-amber-300 text-[10px] font-bold">대기</span>'}
+                        </div>
+                        <p class="text-[11px] text-zinc-400 mt-1">${u.company || ''} · ${u.phone || ''}</p>
+                    </div>
+                    ${u.username === 'jaminator85' ? '' : `
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" onclick="toggleApproval('${u.username}')" class="px-3 py-1.5 rounded-lg text-xs font-bold ${u.approved ? 'steel-btn text-zinc-300' : 'emerald-metallic-btn text-white'}">${u.approved ? '승인취소' : '승인하기'}</button>
+                        <button type="button" onclick="deleteUser('${u.username}')" class="px-2.5 py-1.5 rounded-lg bg-red-950 text-red-300 text-xs font-bold">삭제</button>
+                    </div>`}
+                </div>
+            `).join('');
+        }
+
+        function renderAdminRoleAssignList() {
+            const box = document.getElementById('admin-role-assign-list');
+            const users = Object.values(dbData.users).filter(u => u.approved || u.username === 'jaminator85');
+            box.innerHTML = users.map(u => `
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs">
+                    <div>
+                        <span class="font-bold text-white">${u.name}</span> <span class="text-zinc-400">(${u.username})</span>
+                    </div>
+                    <select onchange="changeUserRole('${u.username}', this.value)" class="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 text-xs font-bold text-emerald-400">
+                        <option value="member" ${!u.role || u.role === 'member' ? 'selected' : ''}>일반 회원</option>
+                        <option value="president" ${u.role === 'president' ? 'selected' : ''}>👑 회장</option>
+                        <option value="treasurer" ${u.role === 'treasurer' ? 'selected' : ''}>💰 재무</option>
+                        <option value="admin" ${u.username === 'jaminator85' || u.role === 'admin' ? 'selected' : ''}>⚙️ 총무</option>
+                    </select>
+                </div>
+            `).join('');
+        }
+
+        function renderCustomFoldersAdminList() {
+            const list = document.getElementById('custom-folders-admin-list');
+            if (!list) return;
+            const folders = dbData.config.customFolders || [];
+            if (folders.length === 0) {
+                list.innerHTML = `<p class="text-[11px] text-zinc-500">추가된 커스텀 폴더가 없습니다.</p>`;
+                return;
+            }
+            list.innerHTML = folders.map(f => `
+                <div class="flex items-center gap-2 p-2 rounded-xl bg-zinc-950 border border-zinc-800">
+                    <input type="text" value="${f.name}" data-custom-folder-id="${f.id}" class="custom-folder-name-input flex-1 px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-xs">
+                    <button type="button" onclick="deleteCustomFolder('${f.id}')" class="px-2.5 py-1.5 rounded-lg bg-red-950 text-red-300 text-xs font-bold">삭제</button>
+                </div>
+            `).join('');
+        }
+
+        window.addCustomFolder = () => {
+            const nameInput = document.getElementById('new-folder-name');
+            const name = nameInput.value.trim();
+            if (!name) {
+                showToast("폴더 이름을 입력하세요.", "error");
+                return;
+            }
+            if (!dbData.config.customFolders) dbData.config.customFolders = [];
+            dbData.config.customFolders.push({ id: `cf_${Date.now()}`, name });
+            nameInput.value = '';
+            saveData();
+            applySiteConfigUI();
+            showToast("새 폴더가 추가되었습니다!", "success");
+        };
+
+        window.changeUserRole = (username, role) => {
+            if (dbData.users[username]) {
+                dbData.users[username].role = role;
+                if (role !== 'member') dbData.users[username].approved = true;
+                saveData();
+                renderAll();
+                showToast("임원 권한이 변경되었습니다.", "success");
+            }
+        };
+
+        window.toggleApproval = (username) => {
+            if (dbData.users[username]) {
+                dbData.users[username].approved = !dbData.users[username].approved;
+                saveData();
+                renderAll();
+                showToast("회원 승인 상태가 변경되었습니다.", "success");
+            }
+        };
+
+        window.deleteUser = async (username) => {
+            const ok = await confirm("회원 삭제", "이 계정을 삭제하시겠습니까?");
+            if (!ok) return;
+            delete dbData.users[username];
+            saveData();
+            renderAll();
+            showToast("삭제되었습니다.", "info");
+        };
+
+        window.handleLogin = (e) => {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            loadData();
+            const user = dbData.users[username];
+            if (!user) {
+                showToast("존재하지 않는 아이디입니다.", "error");
+                return;
+            }
+            if (user.password !== password) {
+                showToast("비밀번호가 일치하지 않습니다.", "error");
+                return;
+            }
+            const isExecutive = user.username === 'jaminator85' || user.role === 'admin' || user.role === 'president' || user.role === 'treasurer';
+            if (!user.approved && !isExecutive) {
+                showToast("임원진(총무·회장·재무)의 가입 승인을 기다리는 중입니다.", "error");
+                return;
+            }
+            loginSuccess(user);
+        };
+
+        window.deleteCustomFolder = async (id) => {
+            const ok = await confirm("폴더 삭제", "이 폴더를 삭제하시겠습니까?");
+            if (!ok) return;
+            dbData.config.customFolders = dbData.config.customFolders.filter(f => f.id !== id);
+            saveData();
+            applySiteConfigUI();
+            showToast("폴더가 삭제되었습니다.", "info");
+        };
+
+        window.handleSaveConfig = (e) => {
+            e.preventDefault();
+            const updatedFolders = [];
+            document.querySelectorAll('.custom-folder-name-input').forEach(inp => {
+                const id = inp.dataset.customFolderId;
+                const val = inp.value.trim();
+                if (val) updatedFolders.push({ id, name: val });
+            });
+            dbData.config.siteTitle = document.getElementById('cfg-site-title').value.trim();
+            dbData.config.menus = {
+                home: document.getElementById('cfg-menu-home').value.trim(),
+                games: document.getElementById('cfg-menu-games').value.trim(),
+                schedule: document.getElementById('cfg-menu-schedule').value.trim(),
+                gallery: document.getElementById('cfg-menu-gallery').value.trim(),
+                members: document.getElementById('cfg-menu-members').value.trim()
+            };
+            dbData.config.customFolders = updatedFolders;
+            saveData();
+            applySiteConfigUI();
+            showToast("설정이 저장되었습니다!", "success");
+        };
+
+        // 회원 승인 관리
+        function renderAdminUsersList() {
+            const list = document.getElementById('admin-users-list');
+            const users = Object.values(dbData.users);
+            list.innerHTML = users.map(u => `
+                <div class="p-3.5 rounded-xl bg-zinc-950 border ${u.approved ? 'border-zinc-800' : 'border-amber-500/50'} flex items-center justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-sm text-white">${u.name}</span>
+                            <span class="text-xs text-zinc-400">(${u.username})</span>
+                            ${u.username === 'jaminator85' ? '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-black">총무</span>' : u.approved ? '<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 text-[10px] font-bold">승인</span>' : '<span class="px-2 py-0.5 rounded bg-amber-950 text-amber-300 text-[10px] font-bold">대기</span>'}
+                        </div>
+                        <p class="text-[11px] text-zinc-400 mt-1">${u.company || ''} · ${u.phone || ''}</p>
+                    </div>
+                    ${u.username === 'jaminator85' ? '' : `
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" onclick="toggleApproval('${u.username}')" class="px-3 py-1.5 rounded-lg text-xs font-bold ${u.approved ? 'steel-btn text-zinc-300' : 'emerald-metallic-btn text-white'}">${u.approved ? '취소' : '승인'}</button>
+                        <button type="button" onclick="deleteUser('${u.username}')" class="px-2.5 py-1.5 rounded-lg bg-red-950 text-red-300 text-xs font-bold">삭제</button>
+                    </div>`}
+                </div>
+            `).join('');
+        }
+
+        window.toggleApproval = (username) => {
+            if (dbData.users[username]) {
+                dbData.users[username].approved = !dbData.users[username].approved;
+                saveData();
+                renderAll();
+                showToast("회원 승인 상태가 변경되었습니다.", "success");
+            }
+        };
+
+        window.deleteUser = async (username) => {
+            const ok = await confirm("회원 삭제", "이 계정을 삭제하시겠습니까?");
+            if (!ok) return;
+            delete dbData.users[username];
+            saveData();
+            renderAll();
+            showToast("삭제되었습니다.", "info");
+        };
+
+        // 프로필 관리
+        window.openProfileModal = () => {
+            if (!currentUser) return;
+            document.getElementById('prof-preview').src = getAvatarUrl(currentUser);
+            document.getElementById('prof-username').value = currentUser.username || '';
+            document.getElementById('prof-password').value = '';
+            document.getElementById('prof-name').value = currentUser.name || '';
+            document.getElementById('prof-phone').value = currentUser.phone || '';
+            document.getElementById('prof-company').value = currentUser.company || '';
+            document.getElementById('prof-family').value = currentUser.family || '';
+            document.getElementById('prof-bio').value = currentUser.bio || '';
+            document.getElementById('profile-modal').classList.remove('hidden');
+            document.getElementById('profile-modal').classList.add('flex');
+        };
+
+        window.closeProfileModal = () => {
+            document.getElementById('profile-modal').classList.add('hidden');
+            document.getElementById('profile-modal').classList.remove('flex');
+        };
+
+        window.previewAvatar = async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const compressed = await compressImage(file, 320, 0.8);
+            document.getElementById('prof-preview').src = compressed;
+        };
+
+        window.handleSaveProfile = async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+            let avatar = currentUser.avatar;
+            const file = document.getElementById('prof-file').files?.[0];
+            if (file) avatar = await compressImage(file, 320, 0.8);
+
+            const newUsername = document.getElementById('prof-username').value.trim();
+            const newPassword = document.getElementById('prof-password').value.trim();
+
+            if (!newUsername) {
+                showToast("아이디는 비워둘 수 없습니다.", "error");
+                return;
+            }
+
+            if (newUsername !== currentUser.username) {
+                if (dbData.users[newUsername]) {
+                    showToast("이미 사용 중인 아이디입니다.", "error");
+                    return;
+                }
+                delete dbData.users[currentUser.username];
+                currentUser.username = newUsername;
+            }
+
+            if (newPassword) {
+                currentUser.password = newPassword;
+            }
+
+            currentUser.name = document.getElementById('prof-name').value.trim();
+            currentUser.phone = document.getElementById('prof-phone').value.trim();
+            currentUser.company = document.getElementById('prof-company').value.trim();
+            currentUser.family = document.getElementById('prof-family').value.trim();
+            currentUser.bio = document.getElementById('prof-bio').value.trim();
+            currentUser.avatar = avatar;
+
+            dbData.users[currentUser.username] = currentUser;
+            saveData();
+            closeProfileModal();
+            updateHeaderProfileUI();
+            renderAll();
+            showToast("프로필 및 계정 정보가 저장되었습니다!", "success");
+        };
+
+        window.closeProfileModal = () => {
+            document.getElementById('profile-modal').classList.add('hidden');
+            document.getElementById('profile-modal').classList.remove('flex');
+        };
+
+        window.previewAvatar = async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const compressed = await compressImage(file, 320, 0.8);
+            document.getElementById('prof-preview').src = compressed;
+        };
+
+        window.handleSaveProfile = async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+            let avatar = currentUser.avatar;
+            const file = document.getElementById('prof-file').files?.[0];
+            if (file) avatar = await compressImage(file, 320, 0.8);
+
+            currentUser.name = document.getElementById('prof-name').value.trim();
+            currentUser.phone = document.getElementById('prof-phone').value.trim();
+            currentUser.company = document.getElementById('prof-company').value.trim();
+            currentUser.family = document.getElementById('prof-family').value.trim();
+            currentUser.bio = document.getElementById('prof-bio').value.trim();
+            currentUser.avatar = avatar;
+
+            dbData.users[currentUser.username] = currentUser;
+            saveData();
+            closeProfileModal();
+            updateHeaderProfileUI();
+            renderAll();
+            showToast("프로필이 저장되었습니다!", "success");
+        };
+
+        // 공지사항
+        window.toggleNoticeForm = () => document.getElementById('notice-form').classList.toggle('hidden');
+
+        window.handleSaveNotice = (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+            const title = document.getElementById('notice-title').value.trim();
+            const content = document.getElementById('notice-content').value.trim();
+            const isAdmin = currentUser.username === 'jaminator85' || currentUser.role === 'admin';
+            const pinned = isAdmin && document.getElementById('notice-pinned').checked;
+
+            dbData.notices.unshift({
+                id: `notice_${Date.now()}`,
+                title, content, pinned,
+                authorUsername: currentUser.username,
+                authorName: currentUser.name,
+                createdAt: Date.now()
+            });
+            saveData();
+            document.getElementById('notice-form').reset();
+            document.getElementById('notice-form').classList.add('hidden');
+            renderNotices();
+            showToast("공지가 등록되었습니다.", "success");
+        };
+
+        window.deleteNotice = async (id) => {
+            const ok = await confirm("공지 삭제", "삭제하시겠습니까?");
+            if (!ok) return;
+            dbData.notices = dbData.notices.filter(n => n.id !== id);
+            saveData();
+            renderNotices();
+            showToast("삭제되었습니다.", "info");
+        };
+
+        function renderNotices() {
+            const list = document.getElementById('notices-list');
+            if (dbData.notices.length === 0) {
+                list.innerHTML = `<div class="p-4 rounded-xl bg-zinc-950 text-xs text-zinc-400 text-center">등록된 공지사항이 없습니다.</div>`;
+                return;
+            }
+            const isAdmin = currentUser && (currentUser.username === 'jaminator85' || currentUser.role === 'admin');
+            list.innerHTML = dbData.notices.map(n => `
+                <div class="p-4 rounded-xl bg-zinc-950 border ${n.pinned ? 'border-amber-500/50' : 'border-zinc-800'} flex items-start justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            ${n.pinned ? '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-black">중요</span>' : ''}
+                            <h3 class="text-sm font-bold text-white">${n.title}</h3>
+                            <span class="text-[11px] text-zinc-500">· ${n.authorName}</span>
+                        </div>
+                        <p class="text-xs text-zinc-300 mt-1 whitespace-pre-line">${n.content}</p>
+                    </div>
+                    ${isAdmin || (currentUser && n.authorUsername === currentUser.username) ? `<button type="button" onclick="deleteNotice('${n.id}')" class="px-2 py-1 rounded bg-red-950 text-red-300 text-xs font-bold">삭제</button>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // 라운드 일정
+        window.handleSaveSchedule = (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+            dbData.schedules.push({
+                id: `sch_${Date.now()}`,
+                title: document.getElementById('sch-title').value.trim(),
+                date: document.getElementById('sch-date').value,
+                place: document.getElementById('sch-place').value.trim(),
+                note: document.getElementById('sch-note').value.trim(),
+                attendees: [currentUser.name],
+                authorUsername: currentUser.username,
+                authorName: currentUser.name,
+                createdAt: Date.now()
+            });
+            saveData();
+            document.getElementById('schedule-form').reset();
+            renderSchedules();
+            showToast("일정이 등록되었습니다!", "success");
+        };
+
+        window.toggleAttend = (id) => {
+            if (!currentUser) return;
+            const sch = dbData.schedules.find(s => s.id === id);
+            if (!sch) return;
+            const idx = sch.attendees.indexOf(currentUser.name);
+            if (idx >= 0) sch.attendees.splice(idx, 1);
+            else sch.attendees.push(currentUser.name);
+            saveData();
+            renderSchedules();
+            showToast("참석 여부가 반영되었습니다.", "success");
+        };
+
+        window.deleteSchedule = async (id) => {
+            const ok = await confirm("일정 삭제", "삭제하시겠습니까?");
+            if (!ok) return;
+            dbData.schedules = dbData.schedules.filter(s => s.id !== id);
+            saveData();
+            renderSchedules();
+            showToast("삭제되었습니다.", "info");
+        };
+
+        function renderSchedules() {
+            const fullList = document.getElementById('schedule-list');
+            const homeList = document.getElementById('home-schedule-list');
+            if (dbData.schedules.length === 0) {
+                const empty = `<div class="col-span-full metallic-card rounded-2xl p-6 text-center text-xs text-zinc-400">등록된 일정이 없습니다.</div>`;
+                if (fullList) fullList.innerHTML = empty;
+                if (homeList) homeList.innerHTML = empty;
+                return;
+            }
+            const html = dbData.schedules.map(s => {
+                const isAttending = currentUser && s.attendees.includes(currentUser.name);
+                const isAdmin = currentUser && (currentUser.username === 'jaminator85' || currentUser.role === 'admin');
+                const canDel = isAdmin || (currentUser && s.authorUsername === currentUser.username);
+                return `
+                <div class="metallic-card rounded-2xl p-5 space-y-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="px-2.5 py-0.5 rounded-md bg-emerald-950 text-emerald-400 text-[11px] font-bold">${s.place}</span>
+                            <h3 class="text-base font-black text-white mt-1">${s.title}</h3>
+                        </div>
+                        ${canDel ? `<button type="button" onclick="deleteSchedule('${s.id}')" class="px-2 py-1 rounded bg-red-950 text-red-300 text-xs font-bold">삭제</button>` : ''}
+                    </div>
+                    <p class="text-xs text-amber-300 font-bold">🕒 ${s.date ? s.date.replace('T', ' ') : ''}</p>
+                    ${s.note ? `<p class="text-xs text-zinc-300">${s.note}</p>` : ''}
+                    <div class="pt-3 border-t border-zinc-800 space-y-2">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-zinc-400 font-bold">참석자 (${s.attendees.length}명)</span>
+                            <button type="button" onclick="toggleAttend('${s.id}')" class="px-3 py-1.5 rounded-xl font-bold text-xs ${isAttending ? 'bg-emerald-600 text-white' : 'steel-btn text-emerald-400'}">${isAttending ? '✓ 참석중' : '🏌️ 참석하기'}</button>
+                        </div>
+                        <div class="flex flex-wrap gap-1">${s.attendees.map(a => `<span class="px-2 py-0.5 rounded bg-zinc-900 text-[11px] text-zinc-200">${a}</span>`).join('')}</div>
+                    </div>
+                </div>`;
+            });
+            if (fullList) fullList.innerHTML = html.join('');
+            if (homeList) homeList.innerHTML = html.slice(0, 2).join('');
+        }
+
+        // 사진첩
+        window.handleSaveGallery = async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+            const file = document.getElementById('gal-file').files?.[0];
+            if (!file) return;
+            const imageUrl = await compressImage(file, 900, 0.75);
+            dbData.gallery.unshift({
+                id: `gal_${Date.now()}`,
+                caption: document.getElementById('gal-caption').value.trim(),
+                imageUrl,
+                authorUsername: currentUser.username,
+                authorName: currentUser.name,
+                createdAt: Date.now()
+            });
+            saveData();
+            document.getElementById('gallery-form').reset();
+            renderGallery();
+            showToast("사진이 저장되었습니다!", "success");
+        };
+
+        window.deleteGallery = async (id) => {
+            const ok = await confirm("사진 삭제", "삭제하시겠습니까?");
+            if (!ok) return;
+            dbData.gallery = dbData.gallery.filter(g => g.id !== id);
+            saveData();
+            renderGallery();
+            showToast("삭제되었습니다.", "info");
+        };
+
+        function renderGallery() {
+            const fullGrid = document.getElementById('gallery-grid');
+            const homeGrid = document.getElementById('home-gallery-grid');
+            if (dbData.gallery.length === 0) {
+                const empty = `<div class="col-span-full metallic-card rounded-2xl p-6 text-center text-xs text-zinc-400">등록된 사진이 없습니다.</div>`;
+                if (fullGrid) fullGrid.innerHTML = empty;
+                if (homeGrid) homeGrid.innerHTML = empty;
+                return;
+            }
+            const html = dbData.gallery.map(g => {
+                const isAdmin = currentUser && (currentUser.username === 'jaminator85' || currentUser.role === 'admin');
+                const canDel = isAdmin || (currentUser && g.authorUsername === currentUser.username);
+                return `
+                <div class="metallic-card rounded-2xl overflow-hidden flex flex-col">
+                    <div class="aspect-[4/3] bg-zinc-950 overflow-hidden"><img src="${g.imageUrl}" class="w-full h-full object-cover"></div>
+                    <div class="p-4 flex justify-between items-center">
+                        <div><p class="text-sm font-bold text-white">${g.caption}</p><p class="text-[11px] text-zinc-400">by ${g.authorName}</p></div>
+                        ${canDel ? `<button type="button" onclick="deleteGallery('${g.id}')" class="px-2.5 py-1 rounded bg-red-950 text-red-300 text-xs font-bold">삭제</button>` : ''}
+                    </div>
+                </div>`;
+            });
+            if (fullGrid) fullGrid.innerHTML = html.join('');
+            if (homeGrid) homeGrid.innerHTML = html.slice(0, 3).join('');
+        }
+
+        // 회원수첩
+        function renderMembers() {
+            const grid = document.getElementById('members-grid');
+            const approved = Object.values(dbData.users).filter(u => u.approved || u.username === 'jaminator85');
+            grid.innerHTML = approved.map(u => `
+                <div class="metallic-card rounded-2xl p-5 space-y-3">
+                    <div class="flex items-center gap-3.5">
+                        <img src="${getAvatarUrl(u)}" class="w-14 h-14 rounded-full object-cover border-2 border-emerald-500 bg-zinc-800">
+                        <div>
+                            <div class="flex items-center gap-2"><span class="text-base font-black text-white">${u.name}</span>${u.username === 'jaminator85' || u.role === 'admin' ? '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-black">총무</span>' : u.role === 'president' ? '<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-black">회장</span>' : u.role === 'treasurer' ? '<span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[10px] font-black">재무</span>' : ''}</div>
+                            <p class="text-xs text-emerald-400 font-bold">${u.company || '소속 미등록'}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-1 text-xs text-zinc-300 bg-zinc-950 p-3 rounded-xl border border-zinc-800">
+                        <div>연락처: ${u.phone || '-'}</div>
+                        <div>가족관계: ${u.family || '-'}</div>
+                        ${u.bio ? `<div class="text-zinc-400 pt-1 border-t border-zinc-800">"${u.bio}"</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 커스텀 폴더 게시판
+        window.handleSaveCustomPost = async (e) => {
+            e.preventDefault();
+            if (!currentUser || !activeCustomFolderId) return;
+            let imageUrl = '';
+            const file = document.getElementById('cp-file').files?.[0];
+            if (file) imageUrl = await compressImage(file, 850, 0.72);
+
+            dbData.customPosts.unshift({
+                id: `cpost_${Date.now()}`,
+                folderId: activeCustomFolderId,
+                title: document.getElementById('cp-title').value.trim(),
+                content: document.getElementById('cp-content').value.trim(),
+                imageUrl,
+                authorUsername: currentUser.username,
+                authorName: currentUser.name,
+                createdAt: Date.now()
+            });
+            saveData();
+            document.getElementById('custom-post-form').reset();
+            renderCustomFolderPosts();
+            showToast("게시글이 저장되었습니다!", "success");
+        };
+
+        window.deleteCustomPost = async (id) => {
+            const ok = await confirm("게시글 삭제", "삭제하시겠습니까?");
+            if (!ok) return;
+            dbData.customPosts = dbData.customPosts.filter(p => p.id !== id);
+            saveData();
+            renderCustomFolderPosts();
+            showToast("삭제되었습니다.", "info");
+        };
+
+        function renderCustomFolderPosts() {
+            const list = document.getElementById('custom-folder-posts-list');
+            if (!list || !activeCustomFolderId) return;
+            const posts = dbData.customPosts.filter(p => p.folderId === activeCustomFolderId);
+            if (posts.length === 0) {
+                list.innerHTML = `<div class="metallic-card rounded-2xl p-6 text-center text-xs text-zinc-400">등록된 게시글이 없습니다.</div>`;
+                return;
+            }
+            const isAdmin = currentUser && (currentUser.username === 'jaminator85' || currentUser.role === 'admin');
+            list.innerHTML = posts.map(p => `
+                <div class="metallic-card rounded-2xl p-5 space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div><h3 class="text-base font-bold text-white">${p.title}</h3><p class="text-[11px] text-zinc-400">작성자: ${p.authorName}</p></div>
+                        ${isAdmin || (currentUser && p.authorUsername === currentUser.username) ? `<button type="button" onclick="deleteCustomPost('${p.id}')" class="px-2.5 py-1 rounded bg-red-950 text-red-300 text-xs font-bold">삭제</button>` : ''}
+                    </div>
+                    <p class="text-xs text-zinc-300 whitespace-pre-line">${p.content}</p>
+                    ${p.imageUrl ? `<img src="${p.imageUrl}" class="max-h-72 rounded-xl object-contain">` : ''}
+                </div>
+            `).join('');
+        }
+
+        // 게임 및 랭킹
+        let ladderState = null, ladderAnimFrame = null;
+        const LADDER_COLORS = ['#34d399', '#fbbf24', '#60a5fa', '#f472b6', '#a78bfa', '#fb923c', '#2dd4bf', '#f87171', '#a3e635', '#38bdf8'];
+
+        window.loadApprovedPlayersToLadder = () => {
+            const names = Object.values(dbData.users).filter(u => u.approved || u.username === 'jaminator85').map(u => u.name).slice(0, 10);
+            if (names.length >= 2) {
+                document.getElementById('ladder-players-input').value = names.join(', ');
+                initLadderCanvas();
+                showToast("승인된 회원 명단을 불러왔습니다.", "info");
+            }
+        };
+
+        function buildLadderData() {
+            const raw = document.getElementById('ladder-players-input').value;
+            let players = raw.split(',').map(s => s.trim()).filter(Boolean).slice(0, 10);
+            if (players.length < 2) players = ['회원1', '회원2'];
+            const n = players.length;
+            const teamCount = parseInt(document.getElementById('ladder-teams-select').value, 10) || 2;
+            const bottomTeams = [];
+            for (let i = 0; i < n; i++) bottomTeams.push(`${(i % teamCount) + 1}조`);
+            for (let i = bottomTeams.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [bottomTeams[i], bottomTeams[j]] = [bottomTeams[j], bottomTeams[i]];
+            }
+            const levels = 9, rungs = [];
+            for (let lv = 1; lv < levels; lv++) {
+                let c = 0;
+                while (c < n - 1) {
+                    if (Math.random() < 0.55) { rungs.push({ level: lv, col: c }); c += 2; }
+                    else { c += 1; }
+                }
+            }
+            const paths = [], assignments = [];
+            for (let startCol = 0; startCol < n; startCol++) {
+                let col = startCol;
+                const pts = [{ col, level: 0 }];
+                for (let lv = 1; lv < levels; lv++) {
+                    pts.push({ col, level: lv });
+                    if (rungs.find(r => r.level === lv && r.col === col)) { col += 1; pts.push({ col, level: lv }); }
+                    else if (rungs.find(r => r.level === lv && r.col === col - 1)) { col -= 1; pts.push({ col, level: lv }); }
+                }
+                pts.push({ col, level: levels });
+                paths.push(pts);
+                assignments.push({ player: players[startCol], team: bottomTeams[col] });
+            }
+            return { players, n, teamCount, bottomTeams, levels, rungs, paths, assignments };
+        }
+
+        function drawLadderFrame(progress = 0) {
+            const canvas = document.getElementById('ladder-canvas');
+            if (!canvas || !ladderState) return;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width || 400;
+            canvas.height = rect.height || 256;
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width, H = canvas.height;
+            ctx.clearRect(0, 0, W, H);
+            const { players, n, bottomTeams, levels, rungs, paths } = ladderState;
+            const padX = 36, topY = 34, botY = H - 32;
+            const stepX = n > 1 ? (W - padX * 2) / (n - 1) : 0;
+            const stepY = (botY - topY) / levels;
+
+            ctx.textAlign = 'center';
+            ctx.font = 'bold 11px sans-serif';
+            for (let i = 0; i < n; i++) {
+                const x = padX + i * stepX;
+                ctx.strokeStyle = '#3f3f46'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(x, topY); ctx.lineTo(x, botY); ctx.stroke();
+                ctx.fillStyle = LADDER_COLORS[i % LADDER_COLORS.length]; ctx.fillText(players[i], x, 20);
+                ctx.fillStyle = '#e4e4e7'; ctx.fillText(bottomTeams[i], x, H - 12);
+            }
+            ctx.strokeStyle = '#52525b'; ctx.lineWidth = 2;
+            rungs.forEach(r => {
+                ctx.beginPath(); ctx.moveTo(padX + r.col * stepX, topY + r.level * stepY); ctx.lineTo(padX + (r.col + 1) * stepX, topY + r.level * stepY); ctx.stroke();
+            });
+
+            if (progress > 0) {
+                paths.forEach((pts, idx) => {
+                    const coords = pts.map(p => ({ x: padX + p.col * stepX, y: topY + p.level * stepY }));
+                    let totalLen = 0, segLens = [];
+                    for (let i = 0; i < coords.length - 1; i++) {
+                        const d = Math.hypot(coords[i + 1].x - coords[i].x, coords[i + 1].y - coords[i].y);
+                        segLens.push(d); totalLen += d;
+                    }
+                    let targetDist = totalLen * progress;
+                    ctx.strokeStyle = LADDER_COLORS[idx % LADDER_COLORS.length]; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(coords[0].x, coords[0].y);
+                    let curX = coords[0].x, curY = coords[0].y;
+                    for (let i = 0; i < segLens.length; i++) {
+                        if (targetDist >= segLens[i]) {
+                            ctx.lineTo(coords[i + 1].x, coords[i + 1].y);
+                            curX = coords[i + 1].x; curY = coords[i + 1].y;
+                            targetDist -= segLens[i];
+                        } else {
+                            const ratio = segLens[i] > 0 ? targetDist / segLens[i] : 0;
+                            curX = coords[i].x + (coords[i + 1].x - coords[i].x) * ratio;
+                            curY = coords[i].y + (coords[i + 1].y - coords[i].y) * ratio;
+                            ctx.lineTo(curX, curY); break;
+                        }
+                    }
+                    ctx.stroke();
+                    ctx.fillStyle = LADDER_COLORS[idx % LADDER_COLORS.length];
+                    ctx.beginPath(); ctx.arc(curX, curY, 4, 0, Math.PI * 2); ctx.fill();
+                });
+            }
+        }
+
+        function initLadderCanvas() {
+            ladderState = buildLadderData();
+            drawLadderFrame(0);
+        }
+
+        function finalizeLadderResult() {
+            if (!ladderState) ladderState = buildLadderData();
+            drawLadderFrame(1);
+            document.getElementById('ladder-timer').textContent = "조편성 완료!";
+            const teamMap = {};
+            for (let t = 1; t <= ladderState.teamCount; t++) teamMap[`${t}조`] = [];
+            ladderState.assignments.forEach(item => { if (!teamMap[item.team]) teamMap[item.team] = []; teamMap[item.team].push(item.player); });
+            const resultBox = document.getElementById('ladder-result-box');
+            resultBox.classList.remove('hidden');
+            resultBox.innerHTML = Object.entries(teamMap).map(([t, m]) => `<div><strong class="text-emerald-400">${t}:</strong> ${m.join(', ') || '-'}</div>`).join('');
+            const summaryText = Object.entries(teamMap).map(([t, m]) => `${t}(${m.join(',')})`).join(' / ');
+            if (currentUser) {
+                dbData.gameRecords.unshift({
+                    id: `ladder_${Date.now()}`,
+                    username: currentUser.username,
+                    name: currentUser.name,
+                    gameName: '사다리타기 조편성',
+                    scoreEarned: 0,
+                    detail: summaryText,
+                    createdAt: Date.now()
+                });
+                saveData();
+                renderRankingAndRecords();
+            }
+        }
+
+        function runLadderAnimation(durationMs = 30000) {
+            if (ladderAnimFrame) cancelAnimationFrame(ladderAnimFrame);
+            document.getElementById('ladder-result-box').classList.add('hidden');
+            ladderState = buildLadderData();
+            drawLadderFrame(0);
+            const startTime = performance.now();
+            function step(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(1, elapsed / durationMs);
+                const remaining = Math.max(0, (durationMs - elapsed) / 1000);
+                document.getElementById('ladder-timer').textContent = `${remaining.toFixed(1)}초`;
+                drawLadderFrame(progress);
+                if (progress < 1) {
+                    ladderAnimFrame = requestAnimationFrame(step);
+                } else {
+                    finalizeLadderResult();
+                }
+            }
+            ladderAnimFrame = requestAnimationFrame(step);
+        }
+
+        document.getElementById('start-ladder-btn').onclick = () => runLadderAnimation(30000);
+        document.getElementById('instant-ladder-btn').onclick = () => runLadderAnimation(2200);
+
+        // 테트리스 (점수별 난이도 속도 상승 반영)
+        const TETRIS_ROWS = 18, TETRIS_COLS = 10, TETRIS_BLOCK = 20;
+        const TETRIS_SHAPES = [[[1,1,1,1]], [[1,1],[1,1]], [[0,1,0],[1,1,1]], [[1,0,0],[1,1,1]], [[0,0,1],[1,1,1]], [[0,1,1],[1,1,0]], [[1,1,0],[0,1,1]]];
+        const TETRIS_COLORS = ['#34d399', '#fbbf24', '#a78bfa', '#60a5fa', '#fb923c', '#2dd4bf', '#f87171'];
+        let tetrisBoard = Array.from({ length: TETRIS_ROWS }, () => Array(TETRIS_COLS).fill(0));
+        let tetrisPiece = null, tetrisNext = null, tetrisScore = 0, isTetrisRunning = false, tetrisTimer = null;
+
+        function randomTetrisPiece() {
+            const idx = Math.floor(Math.random() * TETRIS_SHAPES.length);
+            return { shape: TETRIS_SHAPES[idx].map(r => [...r]), color: TETRIS_COLORS[idx], x: Math.floor(TETRIS_COLS / 2) - 1, y: 0 };
+        }
+
+        function collideTetris(board, piece) {
+            for (let r = 0; r < piece.shape.length; r++) {
+                for (let c = 0; c < piece.shape[r].length; c++) {
+                    if (!piece.shape[r][c]) continue;
+                    const nx = piece.x + c, ny = piece.y + r;
+                    if (nx < 0 || nx >= TETRIS_COLS || ny >= TETRIS_ROWS) return true;
+                    if (ny >= 0 && board[ny][nx]) return true;
+                }
+            }
+            return false;
+        }
+
+        function getTetrisDropInterval() {
+            // 점수가 높아질수록 떨어지는 속도 가속 (최소 120ms까지 단축)
+            const speed = 550 - Math.floor(tetrisScore / 500) * 75;
+            return Math.max(120, speed);
+        }
+
+        function scheduleTetrisDrop() {
+            if (tetrisTimer) clearInterval(tetrisTimer);
+            if (!isTetrisRunning) return;
+            tetrisTimer = setInterval(() => {
+                if (!isTetrisRunning) return;
+                tetrisPiece.y++;
+                if (collideTetris(tetrisBoard, tetrisPiece)) { tetrisPiece.y--; mergeTetris(); }
+                drawTetris();
+            }, getTetrisDropInterval());
+        }
+
+        function mergeTetris() {
+            tetrisPiece.shape.forEach((row, r) => {
+                row.forEach((val, c) => { if (val && tetrisPiece.y + r >= 0) tetrisBoard[tetrisPiece.y + r][tetrisPiece.x + c] = tetrisPiece.color; });
+            });
+            let cleared = 0;
+            for (let r = TETRIS_ROWS - 1; r >= 0; r--) {
+                if (tetrisBoard[r].every(c => c !== 0)) { tetrisBoard.splice(r, 1); tetrisBoard.unshift(Array(TETRIS_COLS).fill(0)); cleared++; r++; }
+            }
+            if (cleared > 0) { 
+                tetrisScore += cleared * 100; 
+                document.getElementById('tetris-score').textContent = tetrisScore;
+                scheduleTetrisDrop(); // 속도 갱신 반영
+            }
+            tetrisPiece = tetrisNext || randomTetrisPiece();
+            tetrisNext = randomTetrisPiece();
+            drawTetrisNext();
+            if (collideTetris(tetrisBoard, tetrisPiece)) { isTetrisRunning = false; clearInterval(tetrisTimer); showToast(`게임 오버! 점수: ${tetrisScore}`, "info"); }
+        }
+
+        function drawTetrisNext() {
+            const canvas = document.getElementById('tetris-next-canvas');
+            if (!canvas || !tetrisNext) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const sz = 16, offX = (canvas.width - tetrisNext.shape[0].length * sz) / 2, offY = (canvas.height - tetrisNext.shape.length * sz) / 2;
+            tetrisNext.shape.forEach((row, r) => { row.forEach((val, c) => { if (val) { ctx.fillStyle = tetrisNext.color; ctx.fillRect(offX + c * sz, offY + r * sz, sz - 1, sz - 1); } }); });
+        }
+
+        function drawTetris() {
+            const canvas = document.getElementById('tetris-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#090b0a'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#181c1a';
+            for (let r = 0; r < TETRIS_ROWS; r++) {
+                for (let c = 0; c < TETRIS_COLS; c++) {
+                    ctx.strokeRect(c * TETRIS_BLOCK, r * TETRIS_BLOCK, TETRIS_BLOCK, TETRIS_BLOCK);
+                    if (tetrisBoard[r][c]) { ctx.fillStyle = tetrisBoard[r][c]; ctx.fillRect(c * TETRIS_BLOCK + 1, r * TETRIS_BLOCK + 1, TETRIS_BLOCK - 2, TETRIS_BLOCK - 2); }
+                }
+            }
+            if (tetrisPiece) {
+                tetrisPiece.shape.forEach((row, r) => { row.forEach((val, c) => { if (val) { ctx.fillStyle = tetrisPiece.color; ctx.fillRect((tetrisPiece.x + c) * TETRIS_BLOCK + 1, (tetrisPiece.y + r) * TETRIS_BLOCK + 1, TETRIS_BLOCK - 2, TETRIS_BLOCK - 2); } }); });
+            }
+        }
+
+        window.startTetris = () => {
+            tetrisBoard = Array.from({ length: TETRIS_ROWS }, () => Array(TETRIS_COLS).fill(0));
+            tetrisScore = 0; document.getElementById('tetris-score').textContent = '0';
+            tetrisPiece = randomTetrisPiece(); tetrisNext = randomTetrisPiece();
+            isTetrisRunning = true; drawTetrisNext(); drawTetris();
+            scheduleTetrisDrop();
+        };
+
+        window.tetrisMove = (dir) => { if (!isTetrisRunning || !tetrisPiece) return; tetrisPiece.x += dir; if (collideTetris(tetrisBoard, tetrisPiece)) tetrisPiece.x -= dir; drawTetris(); };
+        window.tetrisRotate = () => { if (!isTetrisRunning || !tetrisPiece) return; const rot = tetrisPiece.shape[0].map((_, i) => tetrisPiece.shape.map(r => r[i]).reverse()); const prev = tetrisPiece.shape; tetrisPiece.shape = rot; if (collideTetris(tetrisBoard, tetrisPiece)) tetrisPiece.shape = prev; drawTetris(); };
+        window.tetrisSoftDrop = () => { if (!isTetrisRunning || !tetrisPiece) return; tetrisPiece.y++; if (collideTetris(tetrisBoard, tetrisPiece)) { tetrisPiece.y--; mergeTetris(); } drawTetris(); };
+        window.tetrisHardDrop = () => { if (!isTetrisRunning || !tetrisPiece) return; while (!collideTetris(tetrisBoard, tetrisPiece)) { tetrisPiece.y++; } tetrisPiece.y--; mergeTetris(); drawTetris(); };
+
+        window.saveTetrisScore = () => {
+            if (!currentUser || tetrisScore <= 0) return;
+            dbData.gameRecords.unshift({
+                id: `tetris_${Date.now()}`,
+                username: currentUser.username,
+                name: currentUser.name,
+                gameName: '메탈 테트리스',
+                scoreEarned: tetrisScore,
+                detail: `${tetrisScore}점 달성`,
+                createdAt: Date.now()
+            });
+            saveData();
+            renderRankingAndRecords();
+            showToast("테트리스 점수가 저장되었습니다!", "success");
+        };
+
+        // 스도쿠
+        let sudokuSolution = [], sudokuBoard = [], sudokuFixed = [], selectedSudokuCell = null, sudokuSec = 0, sudokuInterval = null;
+
+        function generateSudokuPuzzle(removeCount = 36) {
+            const base = [[1,2,3,4,5,6,7,8,9],[4,5,6,7,8,9,1,2,3],[7,8,9,1,2,3,4,5,6],[2,3,4,5,6,7,8,9,1],[5,6,7,8,9,1,2,3,4],[8,9,1,2,3,4,5,6,7],[3,4,5,6,7,8,9,1,2],[6,7,8,9,1,2,3,4,5],[9,1,2,3,4,5,6,7,8]];
+            const nums = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+            const sol = base.map(row => row.map(v => nums[v - 1]));
+            const puzzle = sol.map(r => [...r]);
+            const fixed = Array.from({ length: 9 }, () => Array(9).fill(true));
+            let removed = 0;
+            while (removed < removeCount) {
+                const r = Math.floor(Math.random() * 9), c = Math.floor(Math.random() * 9);
+                if (puzzle[r][c] !== 0) { puzzle[r][c] = 0; fixed[r][c] = false; removed++; }
+            }
+            return { sol, puzzle, fixed };
+        }
+
+        window.startSudokuGame = () => {
+            const diff = document.getElementById('sudoku-diff')?.value || 'medium';
+            const removeCount = diff === 'easy' ? 28 : diff === 'hard' ? 46 : 36;
+            const { sol, puzzle, fixed } = generateSudokuPuzzle(removeCount);
+            sudokuSolution = sol; sudokuBoard = puzzle; sudokuFixed = fixed; selectedSudokuCell = null; sudokuSec = 0;
+            if (sudokuInterval) clearInterval(sudokuInterval);
+            sudokuInterval = setInterval(() => {
+                sudokuSec++;
+                const m = String(Math.floor(sudokuSec / 60)).padStart(2, '0');
+                const s = String(sudokuSec % 60).padStart(2, '0');
+                const el = document.getElementById('sudoku-timer');
+                if (el) el.textContent = `${m}:${s}`;
+            }, 1000);
+            renderSudokuGrid();
+        };
+
+        function renderSudokuGrid() {
+            const grid = document.getElementById('sudoku-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const val = sudokuBoard[r][c], isFixed = sudokuFixed[r][c];
+                    const isSel = selectedSudokuCell && selectedSudokuCell.r === r && selectedSudokuCell.c === c;
+                    const isWrong = !isFixed && val !== 0 && val !== sudokuSolution[r][c];
+                    const cell = document.createElement('div');
+                    const borderR = (c === 2 || c === 5) ? 'border-r-2 border-r-emerald-600/60' : 'border-r border-r-zinc-800';
+                    const borderB = (r === 2 || r === 5) ? 'border-b-2 border-b-emerald-600/60' : 'border-b border-b-zinc-800';
+                    cell.className = `sudoku-cell ${borderR} ${borderB} ${isSel ? 'bg-emerald-900/60' : isFixed ? 'bg-zinc-900 text-zinc-200' : 'bg-zinc-950 text-emerald-400'} ${isWrong ? '!text-red-400' : ''}`;
+                    cell.textContent = val === 0 ? '' : val;
+                    cell.onclick = () => { selectedSudokuCell = { r, c }; renderSudokuGrid(); };
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        window.inputSudokuNum = (num) => {
+            if (!selectedSudokuCell) return;
+            const { r, c } = selectedSudokuCell;
+            if (sudokuFixed[r][c]) return;
+            sudokuBoard[r][c] = num;
+            renderSudokuGrid();
+            if (sudokuBoard.every((row, ri) => row.every((v, ci) => v === sudokuSolution[ri][ci]))) {
+                clearInterval(sudokuInterval);
+                const diff = document.getElementById('sudoku-diff')?.value || 'medium';
+                const pts = diff === 'easy' ? 30 : diff === 'hard' ? 80 : 50;
+                showToast(`스도쿠 완성! (+${pts}점)`, "success");
+                if (currentUser) {
+                    dbData.gameRecords.unshift({
+                        id: `sudoku_${Date.now()}`,
+                        username: currentUser.username,
+                        name: currentUser.name,
+                        gameName: `스도쿠 (${diff})`,
+                        scoreEarned: pts,
+                        detail: `${sudokuSec}초 클리어`,
+                        createdAt: Date.now()
+                    });
+                    saveData();
+                    renderRankingAndRecords();
+                }
+            }
+        };
+
+        window.giveSudokuHint = () => {
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (sudokuBoard[r][c] !== sudokuSolution[r][c]) {
+                        sudokuBoard[r][c] = sudokuSolution[r][c];
+                        sudokuFixed[r][c] = true;
+                        selectedSudokuCell = { r, c };
+                        renderSudokuGrid(); return;
+                    }
+                }
+            }
+        };
+
+        // 키보드 조작
+        document.addEventListener('keydown', (e) => {
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+            if (isTetrisRunning) {
+                if (e.key === 'ArrowLeft') { e.preventDefault(); tetrisMove(-1); }
+                else if (e.key === 'ArrowRight') { e.preventDefault(); tetrisMove(1); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); tetrisRotate(); }
+                else if (e.key === 'ArrowDown') { e.preventDefault(); tetrisSoftDrop(); }
+                else if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); tetrisHardDrop(); }
+            }
+            if (selectedSudokuCell && e.key >= '1' && e.key <= '9') inputSudokuNum(parseInt(e.key, 10));
+            else if (selectedSudokuCell && (e.key === 'Backspace' || e.key === 'Delete')) inputSudokuNum(0);
+        });
+
+        // 랭킹 및 기록 삭제
+        window.deleteGameRecord = (id) => {
+            dbData.gameRecords = dbData.gameRecords.filter(r => r.id !== id);
+            saveData();
+            renderRankingAndRecords();
+            showToast("기록이 삭제되었습니다.", "info");
+        };
+
+        function renderRankingAndRecords() {
+            const rankList = document.getElementById('game-ranking-list');
+            const recList = document.getElementById('game-records-list');
+            if (!rankList || !recList) return;
+
+            const scoreMap = {};
+            Object.values(dbData.users).forEach(u => {
+                scoreMap[u.username] = { name: u.name, avatar: getAvatarUrl(u), total: 0 };
+            });
+            dbData.gameRecords.forEach(r => {
+                if (!scoreMap[r.username]) scoreMap[r.username] = { name: r.name, avatar: getAvatarUrl({name:r.name}), total: 0 };
+                scoreMap[r.username].total += Number(r.scoreEarned || 0);
+            });
+            const ranked = Object.values(scoreMap).sort((a, b) => b.total - a.total);
+            rankList.innerHTML = ranked.map((item, idx) => `
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950 border border-zinc-800">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-6 text-center font-black text-xs ${idx === 0 ? 'text-amber-400' : 'text-zinc-500'}">${idx + 1}위</span>
+                        <img src="${item.avatar}" class="w-7 h-7 rounded-full object-cover bg-zinc-800">
+                        <span class="text-xs font-bold text-white">${item.name}</span>
+                    </div>
+                    <span class="text-sm font-black text-emerald-400">${item.total.toLocaleString()} P</span>
+                </div>
+            `).join('');
+
+            const isAdmin = currentUser && (currentUser.username === 'jaminator85' || currentUser.role === 'admin');
+            if (dbData.gameRecords.length === 0) {
+                recList.innerHTML = `<p class="text-xs text-zinc-500 text-center py-3">저장된 기록이 없습니다.</p>`;
+            } else {
+                recList.innerHTML = dbData.gameRecords.slice(0, 20).map(r => `
+                    <div class="p-2.5 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between gap-2 text-xs">
+                        <div><span class="font-bold text-emerald-400">[${r.gameName}]</span> <span class="font-bold text-white">${r.name}</span><p class="text-[11px] text-zinc-400">${r.detail || ''}</p></div>
+                        ${isAdmin || (currentUser && r.username === currentUser.username) ? `<button type="button" onclick="deleteGameRecord('${r.id}')" class="px-2 py-1 rounded bg-red-950 text-red-300 text-xs font-bold">삭제</button>` : ''}
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderAll() {
+            renderNotices();
+            renderSchedules();
+            renderGallery();
+            renderMembers();
+            renderAdminUsersList();
+            renderRankingAndRecords();
+            renderCustomFolderPosts();
+        }
+    </script>
+</body>
+</html>
