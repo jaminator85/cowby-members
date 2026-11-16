@@ -1,0 +1,2024 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COWBOY GOLF CLUB - 카우보이 골프모임</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Tone.js for sound effects during the ladder game -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #efece6;
+            color: #1f2937;
+            overflow-x: hidden;
+        }
+        .font-western {
+            font-family: 'Cinzel', serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e7e5e4;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #78350f;
+            border-radius: 3px;
+        }
+        /* Western Ranch & Golf Field Atmospheric Background */
+        .cowboy-hero-bg {
+            background: 
+                linear-gradient(135deg, rgba(15, 35, 24, 0.90) 0%, rgba(45, 26, 14, 0.85) 50%, rgba(12, 28, 20, 0.93) 100%),
+                url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        /* Subtle Leather & Topography Texture for Main App */
+        .ranch-bg-pattern {
+            background-color: #f3f0ea;
+            background-image: 
+                radial-gradient(rgba(120, 53, 15, 0.06) 1.5px, transparent 1.5px),
+                radial-gradient(rgba(20, 83, 45, 0.05) 1.5px, #f3f0ea 1.5px);
+            background-size: 28px 28px;
+            background-position: 0 0, 14px 14px;
+        }
+        /* Metallic Card & Header Effects */
+        .western-header-bg {
+            background: linear-gradient(180deg, #1c1917 0%, #143622 100%);
+            border-bottom: 2px solid #b45309;
+        }
+        .tab-active {
+            border-bottom: 3px solid #d97706;
+            color: #78350f;
+            font-weight: 800;
+            background-color: rgba(254, 243, 199, 0.45);
+        }
+        /* Smooth fade transitions */
+        .fade-in {
+            animation: fadeIn 0.35s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Emblem Subtle Shine */
+        .emblem-glow {
+            filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.75));
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col ranch-bg-pattern">
+    <!-- Toast & Custom Modal Containers -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <div id="custom-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-stone-200">
+            <h3 id="modal-title" class="text-lg font-black text-stone-900 mb-2">알림</h3>
+            <p id="modal-message" class="text-sm text-stone-600 mb-6 whitespace-pre-line"></p>
+            <div class="flex justify-end gap-2">
+                <button id="modal-cancel" class="hidden px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-sm transition">취소</button>
+                <button id="modal-confirm" class="px-5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-400 font-bold text-sm transition">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         AUTH VIEW (LOGIN / REGISTER)
+         ========================================== -->
+    <div id="auth-view" class="flex-1 flex items-center justify-center p-4 cowboy-hero-bg relative">
+        <div class="bg-stone-900/95 backdrop-blur-md rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.85)] w-full max-w-md overflow-hidden border-2 border-stone-600/60">
+            <!-- Header with High-Resolution 3D Chrome Metallic Cowboy Emblem -->
+            <div class="bg-gradient-to-b from-[#2b2927] via-[#1c1b19] to-[#121110] p-6 text-center text-white relative border-b border-stone-700/70">
+                <div class="inline-flex items-center justify-center mb-1">
+                    <canvas id="auth-logo-canvas" width="240" height="240" class="w-44 h-44 emblem-glow"></canvas>
+                </div>
+                <p class="text-stone-300 text-xs font-medium tracking-widest uppercase">Est. Forever • Family &amp; Golf Brotherhood</p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex border-b border-stone-700 bg-stone-900">
+                <button id="tab-login-btn" onclick="switchAuthTab('login')" class="flex-1 py-3.5 text-center font-bold text-amber-400 border-b-2 border-amber-500 transition">회원 로그인</button>
+                <button id="tab-register-btn" onclick="switchAuthTab('register')" class="flex-1 py-3.5 text-center font-medium text-stone-400 hover:text-amber-300 transition">가입 신청</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" onsubmit="handleLogin(event)" class="p-6 space-y-4 bg-white">
+                <div>
+                    <label class="block text-xs font-bold text-stone-700 uppercase mb-1">아이디</label>
+                    <input type="text" id="login-id" required placeholder="아이디를 입력하세요" class="w-full px-4 py-3 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-stone-800 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-700 uppercase mb-1">비밀번호</label>
+                    <input type="password" id="login-pw" required placeholder="비밀번호를 입력하세요" class="w-full px-4 py-3 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-stone-800 transition">
+                </div>
+                <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 hover:from-stone-800 hover:to-stone-700 text-amber-400 border border-stone-600 font-black tracking-wide shadow-lg transition transform active:scale-98">
+                    🤠 카우보이 클럽하우스 입장
+                </button>
+
+                <!-- Quick Demo Login Helper for the Treasurer -->
+                <div class="mt-4 pt-4 border-t border-stone-100 bg-stone-100/90 p-3 rounded-xl text-xs text-stone-600">
+                    <p class="font-bold text-stone-800 mb-1">💡 테스트용 계정 안내 (클릭 시 자동입력)</p>
+                    <div class="flex flex-wrap gap-2 mt-1.5">
+                        <button type="button" onclick="fillDemoLogin('cowboy_admin', '1234')" class="px-2.5 py-1 bg-stone-900 text-amber-400 font-bold rounded-lg hover:bg-stone-800 transition">총무(관리자): cowboy_admin / 1234</button>
+                        <button type="button" onclick="fillDemoLogin('kim_pro', '1234')" class="px-2.5 py-1 bg-white border border-stone-300 text-stone-700 rounded-lg hover:bg-stone-50 transition">일반회원: kim_pro / 1234</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" onsubmit="handleRegister(event)" class="p-6 space-y-4 hidden bg-white">
+                <div class="bg-stone-100 border border-stone-200 p-3 rounded-xl text-xs text-stone-800">
+                    카우보이 골프모임은 <b>폐쇄형 회원제</b>로 운영됩니다. 가입 신청 후 <b>총무님의 승인</b>이 완료되어야 이용 가능합니다.
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-700 uppercase mb-1">성함 (실명)</label>
+                    <input type="text" id="reg-name" required placeholder="예: 홍길동" class="w-full px-4 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-stone-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-700 uppercase mb-1">희망 아이디</label>
+                    <input type="text" id="reg-id" required placeholder="영문/숫자 조합" class="w-full px-4 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-stone-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-700 uppercase mb-1">비밀번호</label>
+                    <input type="password" id="reg-pw" required placeholder="비밀번호 설정" class="w-full px-4 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-stone-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-700 uppercase mb-1">연락처 / 가족 호칭</label>
+                    <input type="text" id="reg-note" required placeholder="예: 010-1234-5678 / 큰형님" class="w-full px-4 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-stone-800">
+                </div>
+                <button type="submit" class="w-full py-3.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-400 font-bold shadow-lg transition">
+                    회원가입 승인 요청하기
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MAIN APP VIEW (AUTHENTICATED MEMBERS ONLY)
+         ========================================== -->
+    <div id="main-app" class="hidden flex-col min-h-screen">
+        <!-- Top Navigation Header with 3D Chrome Metallic Cowboy Emblem -->
+        <header class="western-header-bg text-white shadow-xl sticky top-0 z-40">
+            <div class="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between">
+                <div class="flex items-center gap-3 cursor-pointer group" onclick="navigateTo('schedule')">
+                    <div class="w-14 h-14 flex items-center justify-center group-hover:scale-105 transition shrink-0">
+                        <canvas id="header-logo-canvas" width="160" height="160" class="w-14 h-14 emblem-glow"></canvas>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="font-western font-black text-lg sm:text-xl tracking-wider text-stone-100 leading-tight">COWBOY MEMBERS</h1>
+                        </div>
+                        <p class="text-[11px] text-stone-300">평생을 함께하는 가족 골프모임</p>
+                    </div>
+                </div>
+
+                <!-- User Info & Logout -->
+                <div class="flex items-center gap-3">
+                    <div class="text-right hidden sm:block">
+                        <span id="header-user-name" class="font-bold text-sm text-white"></span>
+                        <span id="header-user-badge" class="ml-1 px-2 py-0.5 text-[10px] rounded-full bg-amber-500 text-stone-950 font-bold">회원</span>
+                    </div>
+                    <button onclick="handleLogout()" class="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-xs font-medium text-stone-200 border border-stone-600 transition">
+                        로그아웃
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation Menu Bar -->
+            <nav class="bg-white/95 backdrop-blur text-stone-600 border-b border-stone-200 shadow-sm overflow-x-auto">
+                <div class="max-w-6xl mx-auto px-2 flex whitespace-nowrap">
+                    <button onclick="navigateTo('schedule')" id="nav-schedule" class="nav-item px-4 py-3.5 text-sm font-medium hover:text-amber-900 transition tab-active flex items-center gap-1.5">
+                        📅 스케줄 & 공지
+                    </button>
+                    <button onclick="navigateTo('grouping')" id="nav-grouping" class="nav-item px-4 py-3.5 text-sm font-medium hover:text-amber-900 transition flex items-center gap-1.5">
+                        🎲 30초 조편성 게임
+                    </button>
+                    <button onclick="navigateTo('family')" id="nav-family" class="nav-item px-4 py-3.5 text-sm font-medium hover:text-amber-900 transition flex items-center gap-1.5">
+                        💐 가족 경조사
+                    </button>
+                    <button onclick="navigateTo('gallery')" id="nav-gallery" class="nav-item px-4 py-3.5 text-sm font-medium hover:text-amber-900 transition flex items-center gap-1.5">
+                        📸 추억 사진첩
+                    </button>
+                    <button onclick="navigateTo('admin')" id="nav-admin" class="nav-item hidden px-4 py-3.5 text-sm font-bold text-amber-800 hover:text-amber-950 transition flex items-center gap-1.5 ml-auto">
+                        👑 총무실 (회원관리)
+                        <span id="pending-badge" class="hidden px-1.5 py-0.5 text-[10px] bg-red-600 text-white rounded-full">0</span>
+                    </button>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Main Content Container -->
+        <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6">
+
+            <!-- 1. SCHEDULE & NOTICE SECTION -->
+            <section id="sec-schedule" class="fade-in space-y-6">
+                <!-- Western Ranch & Golf Field Banner -->
+                <div class="relative overflow-hidden rounded-2xl p-6 sm:p-7 text-white shadow-xl border border-stone-500/40" style="background: linear-gradient(95deg, rgba(24, 20, 18, 0.94) 0%, rgba(20, 62, 38, 0.86) 60%, rgba(24, 20, 18, 0.78) 100%), url('https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?auto=format&fit=crop&w=1400&q=80'); background-size: cover; background-position: center;">
+                    <div class="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="inline-block px-2.5 py-1 bg-gradient-to-r from-amber-500 to-amber-400 text-stone-950 text-xs font-black rounded-lg shadow">🤠 NEXT ROUNDING</span>
+                                <span class="text-xs text-stone-300 font-western tracking-wider">COWBOY MEMBERS</span>
+                            </div>
+                            <h2 id="next-round-title" class="text-xl sm:text-2xl font-black text-white drop-shadow">2026년 11월 정기 라운딩 - 남서울CC</h2>
+                            <p id="next-round-desc" class="text-stone-200 text-sm mt-1">일시: 2026. 11. 28 (토) 07:30 첫티업 | 회비: 1/N 정산</p>
+                        </div>
+                        <button id="btn-open-schedule-modal" onclick="openScheduleModal()" class="hidden px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-black rounded-xl shadow-lg transition text-sm shrink-0">
+                            + 새 일정/공지 등록
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Schedule List -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="schedule-list">
+                    <!-- Populated via JS -->
+                </div>
+            </section>
+
+            <!-- 2. 30-SECOND RANDOM LADDER GROUPING GAME -->
+            <section id="sec-grouping" class="hidden fade-in space-y-6">
+                <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-md border border-gray-100">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+                        <div>
+                            <h2 class="text-xl font-black text-green-900 flex items-center gap-2">
+                                🤠 카우보이 30초 운명의 사다리 조편성
+                            </h2>
+                            <p class="text-sm text-gray-500 mt-1">이름을 입력하면 무작위 경로가 생성되며, 약 30초간 긴장감 넘치는 추첨이 진행됩니다!</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="toggleSound()" id="btn-sound-toggle" class="px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-bold text-gray-700 transition">
+                                🔊 효과음 켜짐
+                            </button>
+                            <button onclick="resetLadderGame()" class="px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-xs font-bold text-amber-900 transition">
+                                🔄 초기화
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Setup Controls -->
+                    <div id="ladder-setup-panel" class="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Left: Player Selection & Input -->
+                        <div class="lg:col-span-2 space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 mb-1.5">참가자 이름 입력 (쉼표 또는 줄바꿈으로 구분)</label>
+                                <textarea id="player-names-input" rows="3" class="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-green-700 focus:outline-none text-sm" placeholder="예: 김프로, 이총무, 박사장, 최회장, 정이사, 한부장, 오실장, 윤대리">김프로, 이총무, 박사장, 최회장, 정이사, 한부장, 오실장, 윤대리</textarea>
+                            </div>
+                            <!-- Quick Member Click Pills -->
+                            <div>
+                                <span class="text-xs font-bold text-gray-500 block mb-1.5">클릭하여 등록된 회원 빠르게 추가:</span>
+                                <div id="quick-member-pills" class="flex flex-wrap gap-1.5">
+                                    <!-- Populated via JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Group Configuration -->
+                        <div class="bg-green-50/70 p-4 rounded-2xl border border-green-100 flex flex-col justify-between space-y-4">
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-green-900 mb-1">편성할 총 조(팀) 개수</label>
+                                    <select id="group-count-select" class="w-full p-2.5 rounded-xl border border-green-300 bg-white text-sm font-bold text-green-900">
+                                        <option value="2" selected>2개 조 (1조, 2조)</option>
+                                        <option value="3">3개 조 (1조, 2조, 3조)</option>
+                                        <option value="4">4개 조 (1조, 2조, 3조, 4조)</option>
+                                        <option value="5">5개 조 (1조~5조)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-green-900 mb-1">추첨 소요 시간 설정</label>
+                                    <select id="game-duration-select" class="w-full p-2.5 rounded-xl border border-green-300 bg-white text-sm font-bold text-green-900">
+                                        <option value="30" selected>약 30초 (기본 긴장감 모드)</option>
+                                        <option value="15">약 15초 (빠른 진행)</option>
+                                        <option value="5">약 5초 (테스트용 초고속)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button onclick="startLadderGame()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-base shadow-lg transition transform active:scale-95">
+                                🚀 운명의 사다리 시작!
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Game Canvas Area -->
+                    <div id="ladder-game-area" class="hidden mt-6 space-y-4">
+                        <!-- Timer & Status Bar -->
+                        <div class="bg-green-950 text-white p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-inner">
+                            <div class="flex items-center gap-3">
+                                <span id="game-status-icon" class="text-2xl animate-bounce">🐎</span>
+                                <div>
+                                    <p id="game-status-text" class="font-bold text-amber-400 text-sm sm:text-base">무작위 사다리 경로 생성 완료! 추첨 진행 중...</p>
+                                    <p class="text-xs text-green-300">카우보이들이 동시에 출발하여 복잡한 경로를 탐색하고 있습니다.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 bg-green-900 px-4 py-2 rounded-xl border border-green-700">
+                                <span class="text-xs text-green-200">남은 시간</span>
+                                <span id="game-timer-display" class="text-2xl font-black text-amber-400 tabular-nums">30.0s</span>
+                            </div>
+                        </div>
+
+                        <!-- Responsive Canvas Wrapper -->
+                        <div class="w-full overflow-x-auto bg-amber-50/40 rounded-2xl border-2 border-green-900/20 p-2">
+                            <div id="canvas-container" class="min-w-[600px] w-full h-[460px] relative">
+                                <canvas id="ladder-canvas" class="w-full h-full rounded-xl"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Final Group Results Box -->
+                        <div id="ladder-result-box" class="hidden fade-in bg-gradient-to-br from-green-900 to-green-950 text-white p-6 rounded-2xl shadow-xl border-2 border-amber-400">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-3 border-b border-green-800">
+                                <div>
+                                    <span class="px-2.5 py-0.5 bg-amber-500 text-green-950 text-xs font-black rounded-md">OFFICIAL RESULT</span>
+                                    <h3 class="text-xl font-black text-white mt-1">🎉 카우보이 정기 라운딩 조편성 확정 결과</h3>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="copyGroupingResult()" class="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition">
+                                        📋 카톡 공유용 복사
+                                    </button>
+                                    <button onclick="saveResultToSchedule()" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-green-950 rounded-xl text-xs font-bold transition">
+                                        📌 공지사항에 게시
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="final-groups-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <!-- Populated via JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. FAMILY EVENTS (경조사) SECTION -->
+            <section id="sec-family" class="hidden fade-in space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                    <div>
+                        <h2 class="text-xl font-black text-green-900">💐 우리 가족 경조사 알림</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">기쁨은 나누면 배가 되고, 슬픔은 나누면 반이 됩니다.</p>
+                    </div>
+                    <button onclick="openFamilyModal()" class="px-4 py-2.5 bg-green-800 hover:bg-green-900 text-white text-sm font-bold rounded-xl shadow transition">
+                        + 경조사 소식 올리기
+                    </button>
+                </div>
+
+                <div id="family-list" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <!-- Populated via JS -->
+                </div>
+            </section>
+
+            <!-- 4. PHOTO GALLERY SECTION -->
+            <section id="sec-gallery" class="hidden fade-in space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                    <div>
+                        <h2 class="text-xl font-black text-green-900">📸 카우보이 추억 사진첩</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">필드 위의 멋진 스윙과 가족들의 행복한 순간을 기록합니다.</p>
+                    </div>
+                    <button onclick="openPhotoModal()" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-xl shadow transition">
+                        + 사진 등록하기
+                    </button>
+                </div>
+
+                <div id="gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Populated via JS -->
+                </div>
+            </section>
+
+            <!-- 5. ADMIN SECTION (TREASURER ONLY) -->
+            <section id="sec-admin" class="hidden fade-in space-y-6">
+                <div class="bg-amber-50 border border-amber-200 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <span class="px-2.5 py-0.5 bg-amber-600 text-white text-xs font-bold rounded-md">ADMIN DASHBOARD</span>
+                        <h2 class="text-xl font-black text-amber-950 mt-1">👑 총무 전용 회원 및 아이디 관리</h2>
+                        <p class="text-sm text-amber-800 mt-0.5">신규 가입 신청 승인, 회원 아이디/비밀번호 초기화 및 강제 탈퇴 처리를 할 수 있습니다.</p>
+                    </div>
+                    <button onclick="openCreateMemberModal()" class="px-4 py-2.5 bg-green-900 hover:bg-green-950 text-white text-sm font-bold rounded-xl shadow transition shrink-0">
+                        + 회원 아이디 직접 발급
+                    </button>
+                </div>
+
+                <!-- Pending Approvals -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                    <h3 class="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        ⏳ 가입 승인 대기 목록
+                    </h3>
+                    <div id="pending-members-list" class="space-y-3">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+
+                <!-- Active Members Table -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 overflow-x-auto">
+                    <h3 class="text-base font-bold text-gray-800 mb-3">✅ 정회원 아이디 관리 목록</h3>
+                    <table class="w-full text-left border-collapse min-w-[600px]">
+                        <thead>
+                            <tr class="border-b border-gray-200 text-xs text-gray-500 uppercase bg-gray-50">
+                                <th class="py-3 px-4 rounded-tl-xl">성함</th>
+                                <th class="py-3 px-4">아이디</th>
+                                <th class="py-3 px-4">비밀번호</th>
+                                <th class="py-3 px-4">연락처 / 호칭</th>
+                                <th class="py-3 px-4">등급</th>
+                                <th class="py-3 px-4 rounded-tr-xl text-right">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="active-members-tbody" class="divide-y divide-gray-100 text-sm">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-stone-950 text-stone-400 text-center py-7 text-xs mt-12 border-t-2 border-amber-600/50">
+            <p class="font-western font-bold text-amber-400 text-sm tracking-widest mb-1">COWBOY MEMBERS GOLF CLUB</p>
+            <p>본 홈페이지는 승인된 정회원 및 가족 전용 공간입니다. | 문의: 총무</p>
+        </footer>
+    </div>
+
+    <!-- ==========================================
+         DYNAMIC FORM MODALS (Schedule, Family, Photo, Admin)
+         ========================================== -->
+    <div id="form-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-100 mb-4">
+                <h3 id="form-modal-title" class="text-lg font-black text-green-900">등록하기</h3>
+                <button onclick="closeFormModal()" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            </div>
+            <div id="form-modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================================================
+           1. STATE & INITIAL MOCK DATA (Single-Session In-Memory State)
+           ========================================================================== */
+        const state = {
+            currentUser: null,
+            soundEnabled: true,
+            members: [
+                { id: 'cowboy_admin', pw: '1234', name: '이총무 (나)', note: '010-1111-2222 / 총무', role: 'admin', status: 'approved' },
+                { id: 'kim_pro', pw: '1234', name: '김프로', note: '010-2222-3333 / 큰형님', role: 'member', status: 'approved' },
+                { id: 'park_ceo', pw: '1234', name: '박사장', note: '010-3333-4444 / 둘째형님', role: 'member', status: 'approved' },
+                { id: 'choi_chairman', pw: '1234', name: '최회장', note: '010-4444-5555 / 회장님', role: 'member', status: 'approved' },
+                { id: 'jung_dir', pw: '1234', name: '정이사', note: '010-5555-6666 / 막내', role: 'member', status: 'approved' },
+                { id: 'han_mgr', pw: '1234', name: '한부장', note: '010-6666-7777 / 친구', role: 'member', status: 'approved' },
+                { id: 'oh_dir', pw: '1234', name: '오실장', note: '010-7777-8888 / 친구', role: 'member', status: 'approved' },
+                { id: 'yoon_asst', pw: '1234', name: '윤대리', note: '010-8888-9999 / 동생', role: 'member', status: 'approved' },
+                { id: 'new_family', pw: '1234', name: '강신입', note: '010-9999-0000 / 김프로 처남', role: 'member', status: 'pending' }
+            ],
+            schedules: [
+                {
+                    id: 1,
+                    type: '정기라운딩',
+                    title: '2026년 11월 정기 라운딩 - 남서울CC',
+                    date: '2026-11-28 (토) 07:30 첫티업',
+                    location: '경기도 성남시 분당구 남서울CC',
+                    content: '가을 단풍 마지막 정기 라운딩입니다. 라운딩 종료 후 클럽하우스 인근 한우집에서 가족 동반 저녁 식사가 예정되어 있습니다.',
+                    attendees: ['이총무 (나)', '김프로', '박사장', '최회장', '정이사', '한부장', '오실장', '윤대리']
+                },
+                {
+                    id: 2,
+                    type: '공지사항',
+                    title: '연말 가족 송년회 및 챔피언십 안내',
+                    date: '2026-12-19 (토) 18:00',
+                    location: '서울 강남구 카우보이 아지트',
+                    content: '한 해 동안 수고한 우리 가족 모두 모이는 자리입니다. 아이들 선물과 올해의 베스트 드레서, 롱기스트 시상이 있습니다.',
+                    attendees: ['이총무 (나)', '김프로', '최회장']
+                }
+            ],
+            familyEvents: [
+                {
+                    id: 1,
+                    category: '결혼/경사',
+                    title: '김프로 큰형님 장녀 결혼식 안내',
+                    date: '2026-12-05 (토) 낮 12:30',
+                    place: '더채플앳청담 6층',
+                    desc: '우리 모임의 큰형님 김프로님 따님이 결혼합니다. 카우보이 회원 전원이 화환 및 축하 참석 예정입니다.',
+                    author: '이총무 (나)'
+                },
+                {
+                    id: 2,
+                    category: '생일/기념일',
+                    title: '최회장님 환갑 기념 가족 여행 축하',
+                    date: '2026-11-20 (금)',
+                    place: '제주도 핀크스 GC',
+                    desc: '카우보이 모임의 정신적 지주 최회장님의 생신을 진심으로 축하드립니다!',
+                    author: '박사장'
+                }
+            ],
+            photos: [
+                {
+                    id: 1,
+                    title: '10월 가을 정기 라운딩 단체샷',
+                    date: '2026-10-24',
+                    author: '이총무 (나)',
+                    url: 'https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?auto=format&fit=crop&w=800&q=80',
+                    desc: '날씨도 완벽하고 스코어도 완벽했던 날! 카우보이 영원하라!'
+                },
+                {
+                    id: 2,
+                    title: '홀인원 뻔했던 나이스 샷 순간',
+                    date: '2026-09-19',
+                    author: '김프로',
+                    url: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?auto=format&fit=crop&w=800&q=80',
+                    desc: '핀 바로 옆 10cm에 붙은 기적의 아이언 샷!'
+                },
+                {
+                    id: 3,
+                    title: '가족 동반 바베큐 파티',
+                    date: '2026-08-15',
+                    author: '박사장',
+                    url: 'https://images.unsplash.com/photo-1592919505780-303950717480?auto=format&fit=crop&w=800&q=80',
+                    desc: '아이들도 너무 좋아했던 여름 캠핑 라운딩 뒷풀이'
+                }
+            ],
+            lastGroupingResult: null
+        };
+
+        /* ==========================================================================
+           2. UI HELPERS (Toast, Custom Modal)
+           ========================================================================== */
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bg = type === 'error' ? 'bg-red-600' : (type === 'info' ? 'bg-amber-600' : 'bg-green-800');
+            toast.className = `${bg} text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium flex items-center gap-2 transform transition-all duration-300 translate-x-full opacity-0`;
+            toast.innerHTML = `<span>${type === 'error' ? '⚠️' : '🤠'}</span><span>${msg}</span>`;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        }
+
+        function showCustomModal(title, message, onConfirm = null) {
+            const modal = document.getElementById('custom-modal');
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            const cancelBtn = document.getElementById('modal-cancel');
+            const confirmBtn = document.getElementById('modal-confirm');
+
+            if (onConfirm) {
+                cancelBtn.classList.remove('hidden');
+                confirmBtn.onclick = () => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                    onConfirm();
+                };
+            } else {
+                cancelBtn.classList.add('hidden');
+                confirmBtn.onclick = () => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                };
+            }
+
+            cancelBtn.onclick = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            };
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeFormModal() {
+            const modal = document.getElementById('form-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        /* ==========================================================================
+           3. AUTHENTICATION LOGIC
+           ========================================================================== */
+        function switchAuthTab(tab) {
+            const loginForm = document.getElementById('login-form');
+            const regForm = document.getElementById('register-form');
+            const loginBtn = document.getElementById('tab-login-btn');
+            const regBtn = document.getElementById('tab-register-btn');
+
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                regForm.classList.add('hidden');
+                loginBtn.className = 'flex-1 py-3.5 text-center font-bold text-green-900 border-b-2 border-amber-500 transition';
+                regBtn.className = 'flex-1 py-3.5 text-center font-medium text-gray-500 hover:text-green-800 transition';
+            } else {
+                loginForm.classList.add('hidden');
+                regForm.classList.remove('hidden');
+                regBtn.className = 'flex-1 py-3.5 text-center font-bold text-green-900 border-b-2 border-amber-500 transition';
+                loginBtn.className = 'flex-1 py-3.5 text-center font-medium text-gray-500 hover:text-green-800 transition';
+            }
+        }
+
+        function fillDemoLogin(id, pw) {
+            document.getElementById('login-id').value = id;
+            document.getElementById('login-pw').value = pw;
+            showToast('테스트 계정이 입력되었습니다. 입장하기를 눌러주세요.', 'info');
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const id = document.getElementById('login-id').value.trim();
+            const pw = document.getElementById('login-pw').value.trim();
+
+            const user = state.members.find(m => m.id === id && m.pw === pw);
+            if (!user) {
+                showToast('아이디 또는 비밀번호가 일치하지 않습니다.', 'error');
+                return;
+            }
+            if (user.status === 'pending') {
+                showCustomModal('가입 승인 대기 중', `${user.name}님은 현재 총무님의 가입 승인을 기다리고 있습니다.\n승인 완료 후 입장이 가능합니다.`);
+                return;
+            }
+
+            state.currentUser = user;
+            enterMainApp();
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value.trim();
+            const id = document.getElementById('reg-id').value.trim();
+            const pw = document.getElementById('reg-pw').value.trim();
+            const note = document.getElementById('reg-note').value.trim();
+
+            if (state.members.some(m => m.id === id)) {
+                showToast('이미 사용 중인 아이디입니다. 다른 아이디를 입력해주세요.', 'error');
+                return;
+            }
+
+            state.members.push({
+                id, pw, name, note,
+                role: 'member',
+                status: 'pending'
+            });
+
+            e.target.reset();
+            switchAuthTab('login');
+            showCustomModal('가입 신청 완료', `${name}님의 회원가입 신청이 접수되었습니다.\n총무님(cowboy_admin)이 아이디를 승인하면 바로 이용하실 수 있습니다!`);
+        }
+
+        function handleLogout() {
+            state.currentUser = null;
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('flex');
+            document.getElementById('auth-view').classList.remove('hidden');
+            document.getElementById('login-pw').value = '';
+            showToast('안전하게 로그아웃 되었습니다.');
+        }
+
+        function enterMainApp() {
+            document.getElementById('auth-view').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('main-app').classList.add('flex');
+
+            // Set Header Info
+            document.getElementById('header-user-name').textContent = state.currentUser.name;
+            const badge = document.getElementById('header-user-badge');
+            const adminNav = document.getElementById('nav-admin');
+            const addSchedBtn = document.getElementById('btn-open-schedule-modal');
+
+            if (state.currentUser.role === 'admin') {
+                badge.textContent = '👑 총무(관리자)';
+                badge.className = 'ml-1 px-2 py-0.5 text-[10px] rounded-full bg-amber-400 text-green-950 font-black';
+                adminNav.classList.remove('hidden');
+                addSchedBtn.classList.remove('hidden');
+            } else {
+                badge.textContent = '정회원';
+                badge.className = 'ml-1 px-2 py-0.5 text-[10px] rounded-full bg-green-700 text-green-100 font-bold';
+                adminNav.classList.add('hidden');
+                addSchedBtn.classList.add('hidden');
+            }
+
+            renderAllSections();
+            navigateTo('schedule');
+            showToast(`환영합니다, ${state.currentUser.name}님!`);
+        }
+
+        /* ==========================================================================
+           4. NAVIGATION & RENDERING
+           ========================================================================== */
+        function navigateTo(sectionId) {
+            const sections = ['schedule', 'grouping', 'family', 'gallery', 'admin'];
+            sections.forEach(s => {
+                document.getElementById(`sec-${s}`).classList.add('hidden');
+                const navBtn = document.getElementById(`nav-${s}`);
+                if (navBtn) navBtn.classList.remove('tab-active');
+            });
+
+            document.getElementById(`sec-${sectionId}`).classList.remove('hidden');
+            const activeNav = document.getElementById(`nav-${sectionId}`);
+            if (activeNav) activeNav.classList.add('tab-active');
+
+            if (sectionId === 'grouping') {
+                renderQuickMemberPills();
+            }
+        }
+
+        function renderAllSections() {
+            renderSchedules();
+            renderFamilyEvents();
+            renderGallery();
+            renderAdminPanel();
+            renderQuickMemberPills();
+        }
+
+        /* --- 4-1. SCHEDULES --- */
+        function renderSchedules() {
+            const list = document.getElementById('schedule-list');
+            list.innerHTML = '';
+
+            if (state.schedules.length > 0) {
+                document.getElementById('next-round-title').textContent = state.schedules[0].title;
+                document.getElementById('next-round-desc').textContent = `일시: ${state.schedules[0].date} | 장소: ${state.schedules[0].location}`;
+            }
+
+            state.schedules.forEach(item => {
+                const isAttending = item.attendees.includes(state.currentUser.name);
+                const isAdmin = state.currentUser.role === 'admin';
+
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start gap-2 mb-2">
+                            <span class="px-2.5 py-1 rounded-lg text-xs font-bold ${item.type === '정기라운딩' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
+                                ${item.type}
+                            </span>
+                            ${isAdmin ? `<button onclick="deleteSchedule(${item.id})" class="text-xs text-red-500 hover:underline">삭제</button>` : ''}
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-1">${item.title}</h3>
+                        <p class="text-xs text-green-800 font-semibold mb-1">🗓 ${item.date}</p>
+                        <p class="text-xs text-gray-500 mb-3">📍 ${item.location}</p>
+                        <p class="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl whitespace-pre-line mb-4">${item.content}</p>
+                    </div>
+                    <div class="pt-3 border-t border-gray-100">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-gray-700">참석 투표 (${item.attendees.length}명 참석)</span>
+                            <button onclick="toggleAttendance(${item.id})" class="px-3 py-1.5 rounded-xl text-xs font-bold transition ${isAttending ? 'bg-green-800 text-white' : 'bg-gray-100 text-gray-700 hover:bg-green-100'}">
+                                ${isAttending ? '✅ 참석 확정 (취소)' : '🙋‍♂️ 참석하기'}
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap gap-1">
+                            ${item.attendees.map(name => `<span class="px-2 py-0.5 bg-green-50 text-green-800 border border-green-200 rounded-md text-[11px] font-medium">${name}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function toggleAttendance(scheduleId) {
+            const sched = state.schedules.find(s => s.id === scheduleId);
+            if (!sched) return;
+            const userName = state.currentUser.name;
+            const idx = sched.attendees.indexOf(userName);
+            if (idx > -1) {
+                sched.attendees.splice(idx, 1);
+                showToast('참석 명단에서 제외되었습니다.', 'info');
+            } else {
+                sched.attendees.push(userName);
+                showToast('참석 명단에 등록되었습니다!');
+            }
+            renderSchedules();
+        }
+
+        function deleteSchedule(id) {
+            showCustomModal('일정 삭제', '해당 스케줄 및 공지사항을 삭제하시겠습니까?', () => {
+                state.schedules = state.schedules.filter(s => s.id !== id);
+                renderSchedules();
+                showToast('삭제되었습니다.');
+            });
+        }
+
+        function openScheduleModal() {
+            document.getElementById('form-modal-title').textContent = '📅 새 스케줄 / 공지 등록';
+            document.getElementById('form-modal-body').innerHTML = `
+                <form onsubmit="submitNewSchedule(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">구분</label>
+                        <select id="new-sched-type" class="w-full p-2.5 rounded-xl border border-gray-300 text-sm">
+                            <option value="정기라운딩">정기라운딩</option>
+                            <option value="번개라운딩">번개라운딩</option>
+                            <option value="공지사항">공지사항</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">제목</label>
+                        <input type="text" id="new-sched-title" required placeholder="예: 12월 정기 라운딩 안내" class="w-full p-2.5 rounded-xl border border-gray-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">일시</label>
+                        <input type="text" id="new-sched-date" required placeholder="예: 2026-12-12 (토) 08:00" class="w-full p-2.5 rounded-xl border border-gray-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">장소 (골프장)</label>
+                        <input type="text" id="new-sched-loc" required placeholder="예: 레이크사이드 CC" class="w-full p-2.5 rounded-xl border border-gray-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">상세 내용</label>
+                        <textarea id="new-sched-content" rows="3" required placeholder="공지할 내용을 적어주세요" class="w-full p-2.5 rounded-xl border border-gray-300 text-sm"></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-3 rounded-xl bg-green-800 hover:bg-green-900 text-white font-bold text-sm">등록 완료</button>
+                </form>
+            `;
+            const modal = document.getElementById('form-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function submitNewSchedule(e) {
+            e.preventDefault();
+            state.schedules.unshift({
+                id: Date.now(),
+                type: document.getElementById('new-sched-type').value,
+                title: document.getElementById('new-sched-title').value,
+                date: document.getElementById('new-sched-date').value,
+                location: document.getElementById('new-sched-loc').value,
+                content: document.getElementById('new-sched-content').value,
+                attendees: [state.currentUser.name]
+            });
+            closeFormModal();
+            renderSchedules();
+            showToast('새 일정이 등록되었습니다!');
+        }
+
+        /* --- 4-2. FAMILY EVENTS (경조사) --- */
+        function renderFamilyEvents() {
+            const list = document.getElementById('family-list');
+            list.innerHTML = '';
+            state.familyEvents.forEach(ev => {
+                const canDelete = state.currentUser.role === 'admin' || state.currentUser.name === ev.author;
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="px-2.5 py-1 bg-amber-100 text-amber-900 rounded-lg text-xs font-bold">${ev.category}</span>
+                            <span class="text-xs text-gray-400">작성자: ${ev.author}</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">${ev.title}</h3>
+                        <div class="text-xs text-gray-600 space-y-1 mb-3">
+                            <p>🗓 <b>일시:</b> ${ev.date}</p>
+                            <p>📍 <b>장소:</b> ${ev.place}</p>
+                        </div>
+                        <p class="text-sm text-gray-700 bg-amber-50/50 p-3 rounded-xl border border-amber-100">${ev.desc}</p>
+                    </div>
+                    ${canDelete ? `<div class="mt-3 text-right"><button onclick="deleteFamilyEvent(${ev.id})" class="text-xs text-red-500 hover:underline">게시글 삭제</button></div>` : ''}
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function openFamilyModal() {
+            document.getElementById('form-modal-title').textContent = '💐 가족 경조사 소식 등록';
+            document.getElementById('form-modal-body').innerHTML = `
+                <form onsubmit="submitFamilyEvent(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">분류</label>
+                        <select id="fam-cat" class="w-full p-2.5 rounded-xl border border-gray-300 text-sm">
+                            <option value="결혼/경사">결혼/경사</option>
+                            <option value="생일/기념일">생일/기념일</option>
+                            <option value="부고/위로">부고/위로</option>
+                            <option value="기타소식">기타소식</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">제목</label>
+                        <input type="text" id="fam-title" required placeholder="예: 둘째 아이 돌잔치 초대합니다" class="w-full p-2.5 rounded-xl border border-gray-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">일시</label>
+                        <input type="text" id="fam-date" required placeholder="예: 2026-12-20 (일) 오후 5시" class="w-full p-2.5 rounded-xl border border-gray-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">장소</label>
+                        <input type="text" id="fam-place" required placeholder="예: 서울 신라호텔 영빈관" class="w-full p-2.5 rounded-xl border border-gray-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">내용</label>
+                        <textarea id="fam-desc" rows="3" required placeholder="가족들에게 전할 말씀을 적어주세요" class="w-full p-2.5 rounded-xl border border-gray-300 text-sm"></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-3 rounded-xl bg-green-800 hover:bg-green-900 text-white font-bold text-sm">소식 올리기</button>
+                </form>
+            `;
+            const modal = document.getElementById('form-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function submitFamilyEvent(e) {
+            e.preventDefault();
+            state.familyEvents.unshift({
+                id: Date.now(),
+                category: document.getElementById('fam-cat').value,
+                title: document.getElementById('fam-title').value,
+                date: document.getElementById('fam-date').value,
+                place: document.getElementById('fam-place').value,
+                desc: document.getElementById('fam-desc').value,
+                author: state.currentUser.name
+            });
+            closeFormModal();
+            renderFamilyEvents();
+            showToast('경조사 소식이 등록되었습니다.');
+        }
+
+        function deleteFamilyEvent(id) {
+            showCustomModal('삭제 확인', '이 경조사 글을 삭제하시겠습니까?', () => {
+                state.familyEvents = state.familyEvents.filter(e => e.id !== id);
+                renderFamilyEvents();
+                showToast('삭제되었습니다.');
+            });
+        }
+
+        /* --- 4-3. GALLERY --- */
+        function renderGallery() {
+            const grid = document.getElementById('gallery-grid');
+            grid.innerHTML = '';
+            state.photos.forEach(p => {
+                const canDelete = state.currentUser.role === 'admin' || state.currentUser.name === p.author;
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex flex-col group';
+                card.innerHTML = `
+                    <div class="relative h-52 bg-gray-200 overflow-hidden">
+                        <img src="${p.url}" alt="${p.title}" onerror="this.src='https://placehold.co/600x400/14532d/ffffff?text=COWBOY+GOLF'" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        <span class="absolute bottom-2 right-2 px-2.5 py-1 bg-black/60 text-white text-[11px] rounded-lg backdrop-blur-sm">${p.date}</span>
+                    </div>
+                    <div class="p-4 flex-1 flex flex-col justify-between">
+                        <div>
+                            <h3 class="font-bold text-gray-900 mb-1">${p.title}</h3>
+                            <p class="text-xs text-gray-600 mb-3">${p.desc}</p>
+                        </div>
+                        <div class="flex justify-between items-center pt-2 border-t border-gray-100 text-xs text-gray-400">
+                            <span>📸 ${p.author}</span>
+                            ${canDelete ? `<button onclick="deletePhoto(${p.id})" class="text-red-500 hover:underline">삭제</button>` : ''}
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openPhotoModal() {
+            document.getElementById('form-modal-title').textContent = '📸 추억 사진 등록하기';
+            document.getElementById('form-modal-body').innerHTML = `
+                <form onsubmit="submitPhoto(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">사진 제목</label>
+                        <input type="text" id="photo-title" required placeholder="예: 11월 라운딩 베스트 샷" class="w-full p-2.5 rounded-xl border border-gray-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">사진 파일 선택 또는 샘플 선택</label>
+                        <input type="file" id="photo-file" accept="image/*" class="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-green-50 file:text-green-800 hover:file:bg-green-100">
+                        <p class="text-[11px] text-gray-400 mt-1">* 파일을 선택하지 않으시면 멋진 기본 골프장 이미지로 등록됩니다.</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">사진 설명</label>
+                        <textarea id="photo-desc" rows="2" required placeholder="그날의 즐거운 추억을 남겨주세요" class="w-full p-2.5 rounded-xl border border-gray-300 text-sm"></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm">사진첩에 올리기</button>
+                </form>
+            `;
+            const modal = document.getElementById('form-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function submitPhoto(e) {
+            e.preventDefault();
+            const title = document.getElementById('photo-title').value;
+            const desc = document.getElementById('photo-desc').value;
+            const fileInput = document.getElementById('photo-file');
+            const today = new Date().toISOString().split('T')[0];
+
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    state.photos.unshift({
+                        id: Date.now(),
+                        title, desc, date: today,
+                        author: state.currentUser.name,
+                        url: evt.target.result
+                    });
+                    closeFormModal();
+                    renderGallery();
+                    showToast('사진이 업로드되었습니다!');
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                state.photos.unshift({
+                    id: Date.now(),
+                    title, desc, date: today,
+                    author: state.currentUser.name,
+                    url: 'https://images.unsplash.com/photo-1593111774240-d529f12cf4bb?auto=format&fit=crop&w=800&q=80'
+                });
+                closeFormModal();
+                renderGallery();
+                showToast('사진이 등록되었습니다!');
+            }
+        }
+
+        function deletePhoto(id) {
+            showCustomModal('사진 삭제', '이 사진을 삭제하시겠습니까?', () => {
+                state.photos = state.photos.filter(p => p.id !== id);
+                renderGallery();
+                showToast('사진이 삭제되었습니다.');
+            });
+        }
+
+        /* --- 4-4. ADMIN PANEL (TREASURER ONLY) --- */
+        function renderAdminPanel() {
+            const pendingList = document.getElementById('pending-members-list');
+            const activeTbody = document.getElementById('active-members-tbody');
+            const pendingBadge = document.getElementById('pending-badge');
+
+            const pendings = state.members.filter(m => m.status === 'pending');
+            const actives = state.members.filter(m => m.status === 'approved');
+
+            if (pendings.length > 0) {
+                pendingBadge.textContent = pendings.length;
+                pendingBadge.classList.remove('hidden');
+            } else {
+                pendingBadge.classList.add('hidden');
+            }
+
+            if (pendings.length === 0) {
+                pendingList.innerHTML = `<p class="text-xs text-gray-400 py-2">현재 가입 승인 대기 중인 신청자가 없습니다.</p>`;
+            } else {
+                pendingList.innerHTML = pendings.map(m => `
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-amber-50 border border-amber-200">
+                        <div>
+                            <span class="font-bold text-gray-900 text-sm">${m.name}</span>
+                            <span class="text-xs text-gray-600 ml-2">(ID: <b>${m.id}</b>)</span>
+                            <p class="text-xs text-gray-500 mt-0.5">${m.note}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="approveMember('${m.id}')" class="px-3 py-1.5 bg-green-800 hover:bg-green-900 text-white text-xs font-bold rounded-lg transition">승인하기</button>
+                            <button onclick="removeMember('${m.id}')" class="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-lg transition">거절</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            activeTbody.innerHTML = actives.map(m => `
+                <tr class="hover:bg-gray-50">
+                    <td class="py-3 px-4 font-bold text-gray-900">${m.name}</td>
+                    <td class="py-3 px-4 font-mono text-xs text-green-800 font-bold">${m.id}</td>
+                    <td class="py-3 px-4 font-mono text-xs text-gray-500">${m.pw}</td>
+                    <td class="py-3 px-4 text-xs text-gray-600">${m.note}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded-md text-[11px] font-bold ${m.role === 'admin' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}">
+                            ${m.role === 'admin' ? '총무(관리자)' : '정회원'}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-right space-x-2">
+                        <button onclick="resetMemberPw('${m.id}')" class="text-xs text-blue-600 hover:underline font-medium">비번초기화</button>
+                        ${m.role !== 'admin' ? `<button onclick="removeMember('${m.id}')" class="text-xs text-red-600 hover:underline font-medium">강제탈퇴</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function approveMember(id) {
+            const member = state.members.find(m => m.id === id);
+            if (member) {
+                member.status = 'approved';
+                renderAdminPanel();
+                renderQuickMemberPills();
+                showToast(`${member.name}님의 가입이 승인되었습니다!`);
+            }
+        }
+
+        function resetMemberPw(id) {
+            const member = state.members.find(m => m.id === id);
+            if (member) {
+                showCustomModal('비밀번호 초기화', `${member.name}(${member.id}) 회원의 비밀번호를 '1234'로 초기화하시겠습니까?`, () => {
+                    member.pw = '1234';
+                    renderAdminPanel();
+                    showToast('비밀번호가 1234로 초기화되었습니다.');
+                });
+            }
+        }
+
+        function removeMember(id) {
+            const member = state.members.find(m => m.id === id);
+            if (!member) return;
+            showCustomModal('회원 삭제 확인', `${member.name}(${member.id}) 회원을 목록에서 삭제하시겠습니까?`, () => {
+                state.members = state.members.filter(m => m.id !== id);
+                renderAdminPanel();
+                renderQuickMemberPills();
+                showToast('처리되었습니다.');
+            });
+        }
+
+        function openCreateMemberModal() {
+            document.getElementById('form-modal-title').textContent = '👑 총무 직권 회원 아이디 발급';
+            document.getElementById('form-modal-body').innerHTML = `
+                <form onsubmit="submitAdminCreateMember(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">회원 성함</label>
+                        <input type="text" id="adm-new-name" required placeholder="예: 송프로" class="w-full p-2.5 rounded-xl border border-gray-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">발급할 아이디</label>
+                        <input type="text" id="adm-new-id" required placeholder="예: song_pro" class="w-full p-2.5 rounded-xl border border-gray-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">초기 비밀번호</label>
+                        <input type="text" id="adm-new-pw" required value="1234" class="w-full p-2.5 rounded-xl border border-gray-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">연락처 / 메모</label>
+                        <input type="text" id="adm-new-note" required placeholder="예: 010-1234-5678 / 사촌동생" class="w-full p-2.5 rounded-xl border border-gray-300 text-sm">
+                    </div>
+                    <button type="submit" class="w-full py-3 rounded-xl bg-green-900 hover:bg-green-950 text-white font-bold text-sm">즉시 승인 및 발급</button>
+                </form>
+            `;
+            const modal = document.getElementById('form-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function submitAdminCreateMember(e) {
+            e.preventDefault();
+            const name = document.getElementById('adm-new-name').value.trim();
+            const id = document.getElementById('adm-new-id').value.trim();
+            const pw = document.getElementById('adm-new-pw').value.trim();
+            const note = document.getElementById('adm-new-note').value.trim();
+
+            if (state.members.some(m => m.id === id)) {
+                showToast('이미 존재하는 아이디입니다.', 'error');
+                return;
+            }
+
+            state.members.push({ id, pw, name, note, role: 'member', status: 'approved' });
+            closeFormModal();
+            renderAdminPanel();
+            renderQuickMemberPills();
+            showToast(`${name}님의 아이디가 즉시 발급되었습니다!`);
+        }
+
+        /* ==========================================================================
+           5. 30-SECOND UNPREDICTABLE RANDOM LADDER GROUPING GAME
+           ========================================================================== */
+        let ladderAnimId = null;
+        let ladderGameState = null;
+        let synth = null;
+
+        function toggleSound() {
+            state.soundEnabled = !state.soundEnabled;
+            const btn = document.getElementById('btn-sound-toggle');
+            btn.textContent = state.soundEnabled ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐';
+        }
+
+        function playTickSound(freq = 440) {
+            if (!state.soundEnabled) return;
+            try {
+                if (!synth) {
+                    synth = new Tone.Synth({
+                        oscillator: { type: 'triangle' },
+                        envelope: { attack: 0.005, decay: 0.05, sustain: 0, release: 0.05 }
+                    }).toDestination();
+                    synth.volume.value = -14;
+                }
+                if (Tone.context.state !== 'running') Tone.start();
+                synth.triggerAttackRelease(freq, '32n');
+            } catch (e) {}
+        }
+
+        function playFanfareSound() {
+            if (!state.soundEnabled) return;
+            try {
+                if (!synth) synth = new Tone.Synth().toDestination();
+                if (Tone.context.state !== 'running') Tone.start();
+                const now = Tone.now();
+                synth.triggerAttackRelease('C5', '8n', now);
+                synth.triggerAttackRelease('E5', '8n', now + 0.12);
+                synth.triggerAttackRelease('G5', '8n', now + 0.24);
+                synth.triggerAttackRelease('C6', '2n', now + 0.36);
+            } catch (e) {}
+        }
+
+        function renderQuickMemberPills() {
+            const container = document.getElementById('quick-member-pills');
+            if (!container) return;
+            const approved = state.members.filter(m => m.status === 'approved');
+            container.innerHTML = approved.map(m => `
+                <button type="button" onclick="appendPlayerName('${m.name.replace(' (나)', '')}')" class="px-2.5 py-1 bg-white hover:bg-green-100 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 transition">
+                    + ${m.name.replace(' (나)', '')}
+                </button>
+            `).join('');
+        }
+
+        function appendPlayerName(name) {
+            const textarea = document.getElementById('player-names-input');
+            const current = textarea.value.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+            if (current.includes(name)) {
+                showToast(`${name}님은 이미 명단에 있습니다.`, 'info');
+                return;
+            }
+            current.push(name);
+            textarea.value = current.join(', ');
+        }
+
+        function resetLadderGame() {
+            if (ladderAnimId) cancelAnimationFrame(ladderAnimId);
+            ladderGameState = null;
+            document.getElementById('ladder-game-area').classList.add('hidden');
+            document.getElementById('ladder-result-box').classList.add('hidden');
+        }
+
+        function startLadderGame() {
+            const rawInput = document.getElementById('player-names-input').value;
+            let players = rawInput.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+
+            if (players.length < 2) {
+                showToast('최소 2명 이상의 참가자 이름을 입력해주세요.', 'error');
+                return;
+            }
+            if (players.length > 16) {
+                showToast('원활한 화면 표시를 위해 최대 16명까지 가능합니다.', 'error');
+                return;
+            }
+
+            const numGroups = parseInt(document.getElementById('group-count-select').value, 10);
+            const durationSec = parseInt(document.getElementById('game-duration-select').value, 10);
+
+            if (players.length < numGroups) {
+                showToast(`참가자 수(${players.length}명)가 조 개수(${numGroups}조)보다 적습니다.`, 'error');
+                return;
+            }
+
+            // 1. Shuffle starting positions randomly so nobody can predict by input order
+            players = shuffleArray([...players]);
+
+            // 2. Create balanced & shuffled destination group slots (e.g., 1조, 1조, 2조, 2조...)
+            let groupSlots = [];
+            for (let i = 0; i < players.length; i++) {
+                groupSlots.push((i % numGroups) + 1);
+            }
+            groupSlots = shuffleArray(groupSlots);
+
+            // 3. Generate dense, unpredictable random horizontal rungs
+            const N = players.length;
+            const numLevels = 28; // High density of rungs for exciting twists
+            const rungs = []; // { level, leftCol }
+            for (let lvl = 1; lvl < numLevels; lvl++) {
+                let col = 0;
+                while (col < N - 1) {
+                    if (Math.random() < 0.48) {
+                        rungs.push({ level: lvl, leftCol: col });
+                        col += 2; // Prevent adjacent rungs at exact same level
+                    } else {
+                        col += 1;
+                    }
+                }
+            }
+
+            // 4. Pre-calculate each player's exact path and variable speed profile
+            // Variable speed profiles ensure nobody knows who reaches bottom first until the very end!
+            const colors = [
+                '#dc2626', '#2563eb', '#d97706', '#7c3aed',
+                '#059669', '#db2777', '#0891b2', '#ea580c',
+                '#4f46e5', '#65a30d', '#be123c', '#0d9488'
+            ];
+
+            const runners = players.map((name, startCol) => {
+                const waypoints = []; // normalized { col, yNorm }
+                let currCol = startCol;
+                waypoints.push({ col: currCol, yNorm: 0 });
+
+                for (let lvl = 1; lvl < numLevels; lvl++) {
+                    const yNorm = lvl / numLevels;
+                    const rightRung = rungs.find(r => r.level === lvl && r.leftCol === currCol);
+                    const leftRung = rungs.find(r => r.level === lvl && r.leftCol === currCol - 1);
+
+                    if (rightRung) {
+                        waypoints.push({ col: currCol, yNorm });
+                        currCol += 1;
+                        waypoints.push({ col: currCol, yNorm });
+                    } else if (leftRung) {
+                        waypoints.push({ col: currCol, yNorm });
+                        currCol -= 1;
+                        waypoints.push({ col: currCol, yNorm });
+                    }
+                }
+                waypoints.push({ col: currCol, yNorm: 1 });
+
+                // Calculate total path length in grid units
+                let totalLen = 0;
+                for (let i = 1; i < waypoints.length; i++) {
+                    const dx = Math.abs(waypoints[i].col - waypoints[i - 1].col);
+                    const dy = Math.abs(waypoints[i].yNorm - waypoints[i - 1].yNorm);
+                    totalLen += (dx * 0.65 + dy);
+                }
+
+                // Random speed modulation parameters for dramatic slowdowns & sprints
+                const phase1 = Math.random() * Math.PI * 2;
+                const phase2 = Math.random() * Math.PI * 2;
+                const finishTimeRatio = 0.88 + Math.random() * 0.12; // All finish between 88% and 100% of duration
+
+                return {
+                    name,
+                    startCol,
+                    endCol: currCol,
+                    assignedGroup: groupSlots[currCol],
+                    color: colors[startCol % colors.length],
+                    waypoints,
+                    totalLen,
+                    phase1,
+                    phase2,
+                    finishTimeRatio,
+                    trail: []
+                };
+            });
+
+            // Show Game Area
+            document.getElementById('ladder-game-area').classList.remove('hidden');
+            document.getElementById('ladder-result-box').classList.add('hidden');
+            document.getElementById('game-status-text').textContent = '무작위 사다리 경로 생성 완료! 추첨 진행 중...';
+            document.getElementById('game-status-icon').textContent = '🐎';
+
+            ladderGameState = {
+                players,
+                groupSlots,
+                rungs,
+                numLevels,
+                runners,
+                startTime: performance.now(),
+                durationMs: durationSec * 1000,
+                lastTickStep: -1,
+                completed: false
+            };
+
+            resizeLadderCanvas();
+            if (ladderAnimId) cancelAnimationFrame(ladderAnimId);
+            ladderAnimId = requestAnimationFrame(animateLadderGame);
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function resizeLadderCanvas() {
+            const container = document.getElementById('canvas-container');
+            const canvas = document.getElementById('ladder-canvas');
+            if (!container || !canvas || !ladderGameState) return;
+
+            const dpr = window.devicePixelRatio || 1;
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+        }
+
+        window.addEventListener('resize', () => {
+            if (ladderGameState) resizeLadderCanvas();
+        });
+
+        function animateLadderGame(now) {
+            if (!ladderGameState) return;
+
+            const elapsed = now - ladderGameState.startTime;
+            const progressRatio = Math.min(elapsed / ladderGameState.durationMs, 1);
+            const remainingSec = Math.max(0, (ladderGameState.durationMs - elapsed) / 1000);
+
+            document.getElementById('game-timer-display').textContent = `${remainingSec.toFixed(1)}s`;
+
+            // Periodic tension tick sound
+            const tickStep = Math.floor(elapsed / 600);
+            if (tickStep > ladderGameState.lastTickStep && progressRatio < 1) {
+                ladderGameState.lastTickStep = tickStep;
+                const pitch = 320 + (progressRatio * 260) + (tickStep % 2 === 0 ? 40 : 0);
+                playTickSound(pitch);
+            }
+
+            // Update status text dynamically for suspense
+            if (progressRatio > 0.75 && progressRatio < 1) {
+                document.getElementById('game-status-text').textContent = '🔥 막판 대역전 구간! 마지막 가로줄을 통과하고 있습니다!';
+            } else if (progressRatio > 0.4 && progressRatio <= 0.75) {
+                document.getElementById('game-status-text').textContent = '🌪 예측 불가! 경로가 수십 번 교차하며 섞이고 있습니다...';
+            }
+
+            drawLadderFrame(progressRatio);
+
+            if (progressRatio < 1) {
+                ladderAnimId = requestAnimationFrame(animateLadderGame);
+            } else if (!ladderGameState.completed) {
+                ladderGameState.completed = true;
+                finalizeLadderGame();
+            }
+        }
+
+        function drawLadderFrame(globalProgress) {
+            const container = document.getElementById('canvas-container');
+            const canvas = document.getElementById('ladder-canvas');
+            if (!container || !canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const width = container.getBoundingClientRect().width;
+            const height = container.getBoundingClientRect().height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            const N = ladderGameState.players.length;
+            const padX = Math.max(45, width / (N + 1));
+            const topY = 58;
+            const bottomY = height - 62;
+            const ladderHeight = bottomY - topY;
+            const colSpacing = N > 1 ? (width - padX * 2) / (N - 1) : 0;
+
+            const getX = (col) => padX + col * colSpacing;
+            const getY = (yNorm) => topY + yNorm * ladderHeight;
+
+            // 1. Draw Vertical Poles
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineCap = 'round';
+            for (let c = 0; c < N; c++) {
+                const x = getX(c);
+                ctx.beginPath();
+                ctx.moveTo(x, topY);
+                ctx.lineTo(x, bottomY);
+                ctx.stroke();
+            }
+
+            // 2. Draw Horizontal Rungs
+            ctx.lineWidth = 3.5;
+            ctx.strokeStyle = '#94a3b8';
+            ladderGameState.rungs.forEach(r => {
+                const x1 = getX(r.leftCol);
+                const x2 = getX(r.leftCol + 1);
+                const y = getY(r.level / ladderGameState.numLevels);
+                ctx.beginPath();
+                ctx.moveTo(x1, y);
+                ctx.lineTo(x2, y);
+                ctx.stroke();
+            });
+
+            // 3. Draw Top Player Name Badges
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ladderGameState.runners.forEach((runner, idx) => {
+                const x = getX(idx);
+                // Pill background
+                ctx.fillStyle = runner.color;
+                roundRect(ctx, x - 34, 12, 68, 28, 10, true, false);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 12px "Noto Sans KR", sans-serif';
+                ctx.fillText(runner.name.slice(0, 5), x, 26);
+            });
+
+            // 4. Draw Bottom Mystery / Revealed Group Boxes
+            ladderGameState.groupSlots.forEach((grpNum, idx) => {
+                const x = getX(idx);
+                const revealed = globalProgress >= 0.96;
+                ctx.fillStyle = revealed ? '#14532d' : '#334155';
+                roundRect(ctx, x - 34, bottomY + 16, 68, 32, 10, true, false);
+
+                ctx.fillStyle = revealed ? '#fbbf24' : '#e2e8f0';
+                ctx.font = 'bold 13px "Noto Sans KR", sans-serif';
+                ctx.fillText(revealed ? `${grpNum}조` : '❓ 비밀', x, bottomY + 32);
+            });
+
+            // 5. Calculate & Draw Each Runner's Current Position & Trail
+            ladderGameState.runners.forEach(runner => {
+                // Non-linear unpredictable progress curve per runner
+                const normT = Math.min(globalProgress / runner.finishTimeRatio, 1);
+                // Add sinusoidal speed fluctuations so runners overtake each other repeatedly
+                const wobble = Math.sin(normT * Math.PI * 6 + runner.phase1) * 0.035 * Math.sin(normT * Math.PI);
+                const effectiveT = Math.max(0, Math.min(1, normT + wobble));
+
+                const targetDist = effectiveT * runner.totalLen;
+                let accumDist = 0;
+                let currX = getX(runner.startCol);
+                let currY = getY(0);
+
+                // Draw colored path trail up to current position
+                ctx.beginPath();
+                ctx.strokeStyle = runner.color;
+                ctx.lineWidth = 4.5;
+                ctx.moveTo(currX, currY);
+
+                for (let i = 1; i < runner.waypoints.length; i++) {
+                    const p0 = runner.waypoints[i - 1];
+                    const p1 = runner.waypoints[i];
+                    const segDx = Math.abs(p1.col - p0.col) * 0.65;
+                    const segDy = Math.abs(p1.yNorm - p0.yNorm);
+                    const segLen = segDx + segDy;
+
+                    if (accumDist + segLen <= targetDist) {
+                        currX = getX(p1.col);
+                        currY = getY(p1.yNorm);
+                        ctx.lineTo(currX, currY);
+                        accumDist += segLen;
+                    } else {
+                        const remain = targetDist - accumDist;
+                        const segRatio = segLen > 0 ? remain / segLen : 0;
+                        const interpCol = p0.col + (p1.col - p0.col) * segRatio;
+                        const interpY = p0.yNorm + (p1.yNorm - p0.yNorm) * segRatio;
+                        currX = getX(interpCol);
+                        currY = getY(interpY);
+                        ctx.lineTo(currX, currY);
+                        break;
+                    }
+                }
+                ctx.stroke();
+
+                // Draw Runner Token (Golf Ball / Cowboy Marker)
+                ctx.beginPath();
+                ctx.arc(currX, currY, 10, 0, Math.PI * 2);
+                ctx.fillStyle = runner.color;
+                ctx.fill();
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+
+                // Floating mini name tag next to ball while moving
+                if (globalProgress < 1) {
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+                    roundRect(ctx, currX - 24, currY - 25, 48, 16, 6, true, false);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 10px "Noto Sans KR", sans-serif';
+                    ctx.fillText(runner.name.slice(0, 4), currX, currY - 17);
+                }
+            });
+        }
+
+        function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            if (fill) ctx.fill();
+            if (stroke) ctx.stroke();
+        }
+
+        function finalizeLadderGame() {
+            playFanfareSound();
+            document.getElementById('game-status-text').textContent = '🎉 추첨 완료! 모든 조편성 결과가 공개되었습니다!';
+            document.getElementById('game-status-icon').textContent = '🏆';
+
+            const numGroups = parseInt(document.getElementById('group-count-select').value, 10);
+            const grouped = {};
+            for (let g = 1; g <= numGroups; g++) grouped[g] = [];
+
+            ladderGameState.runners.forEach(r => {
+                grouped[r.assignedGroup].push(r.name);
+            });
+
+            state.lastGroupingResult = grouped;
+
+            const grid = document.getElementById('final-groups-grid');
+            grid.innerHTML = '';
+            Object.keys(grouped).forEach(gNum => {
+                const members = grouped[gNum];
+                const card = document.createElement('div');
+                card.className = 'bg-white/10 backdrop-blur-sm border border-amber-400/40 rounded-xl p-4';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-2 pb-2 border-b border-white/10">
+                        <span class="font-black text-amber-400 text-lg">${gNum}조</span>
+                        <span class="text-xs text-green-200">${members.length}명</span>
+                    </div>
+                    <ul class="space-y-1.5">
+                        ${members.map((m, i) => `
+                            <li class="flex items-center gap-2 text-sm font-bold text-white">
+                                <span class="w-5 h-5 rounded-full bg-amber-500 text-green-950 text-xs flex items-center justify-center font-black">${i + 1}</span>
+                                <span>${m}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+                grid.appendChild(card);
+            });
+
+            const resultBox = document.getElementById('ladder-result-box');
+            resultBox.classList.remove('hidden');
+            resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function formatGroupingText() {
+            if (!state.lastGroupingResult) return '';
+            let lines = ['🤠 [카우보이 골프모임 조편성 결과] ⛳', ''];
+            Object.keys(state.lastGroupingResult).forEach(gNum => {
+                lines.push(`▶ ${gNum}조: ${state.lastGroupingResult[gNum].join(', ')}`);
+            });
+            lines.push('', '즐거운 라운딩 되세요!');
+            return lines.join('\n');
+        }
+
+        function copyGroupingResult() {
+            const text = formatGroupingText();
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast('조편성 결과가 복사되었습니다! 카톡방에 붙여넣기 하세요.');
+        }
+
+        function saveResultToSchedule() {
+            if (!state.lastGroupingResult) return;
+            const text = formatGroupingText();
+            state.schedules.unshift({
+                id: Date.now(),
+                type: '공지사항',
+                title: '🎲 라운딩 랜덤 사다리 조편성 확정 결과',
+                date: new Date().toLocaleDateString('ko-KR') + ' 추첨 완료',
+                location: '카우보이 클럽하우스',
+                content: text,
+                attendees: [state.currentUser.name]
+            });
+            showToast('조편성 결과가 스케줄 & 공지 게시판에 등록되었습니다!');
+        }
+
+        /* ==========================================================================
+           6. 3D CHROME METALLIC COWBOY EMBLEM RENDERER (Matches 2nd Bull Shield Logo)
+           ========================================================================== */
+        function drawMetallicCowboyEmblem(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            ctx.save();
+            const scale = w / 360;
+            ctx.scale(scale, scale);
+
+            const cx = 180;
+            const cy = 148;
+
+            // Helper: Chrome metallic linear gradient
+            const makeChrome = (x1, y1, x2, y2) => {
+                const g = ctx.createLinearGradient(x1, y1, x2, y2);
+                g.addColorStop(0.0, '#f8fafc');
+                g.addColorStop(0.22, '#9ca3af');
+                g.addColorStop(0.45, '#374151');
+                g.addColorStop(0.55, '#f3f4f6');
+                g.addColorStop(0.78, '#4b5563');
+                g.addColorStop(1.0, '#e5e7eb');
+                return g;
+            };
+
+            // 1. Drop shadow for whole 3D badge
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+            ctx.shadowBlur = 18;
+            ctx.shadowOffsetY = 8;
+
+            // 2. Outer Beveled Metallic Shield Ring
+            const outerR = 114;
+            const innerR = 92;
+            ctx.beginPath();
+            ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+            ctx.fillStyle = makeChrome(cx - outerR, cy - outerR, cx + outerR, cy + outerR);
+            ctx.fill();
+
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+
+            // Outer & Inner Rim Highlights
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#1f2937';
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, outerR - 3, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Inner Dark Recessed Shield Core
+            const coreGrad = ctx.createRadialGradient(cx, cy - 20, 10, cx, cy, innerR);
+            coreGrad.addColorStop(0, '#3f3f46');
+            coreGrad.addColorStop(0.7, '#18181b');
+            coreGrad.addColorStop(1, '#09090b');
+            ctx.beginPath();
+            ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+            ctx.fillStyle = coreGrad;
+            ctx.fill();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#9ca3af';
+            ctx.stroke();
+
+            // 3. Radial Sunburst Rays inside Dark Core
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, innerR - 2, 0, Math.PI * 2);
+            ctx.clip();
+            for (let i = 0; i < 36; i++) {
+                const ang = (i * Math.PI * 2) / 36;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(cx + Math.cos(ang) * innerR, cy + Math.sin(ang) * innerR);
+                ctx.strokeStyle = i % 2 === 0 ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.5)';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // 4. 3D Rivets Around Outer Bezel
+            const rivetR = (outerR + innerR) / 2;
+            const rivetAngles = [-90, -62, -34, -6, 22, 158, 186, 214, 242];
+            rivetAngles.forEach(deg => {
+                const rad = (deg * Math.PI) / 180;
+                const rx = cx + Math.cos(rad) * rivetR;
+                const ry = cy + Math.sin(rad) * rivetR;
+                const rg = ctx.createRadialGradient(rx - 2, ry - 2, 1, rx, ry, 5.5);
+                rg.addColorStop(0, '#ffffff');
+                rg.addColorStop(0.5, '#9ca3af');
+                rg.addColorStop(1, '#1f2937');
+                ctx.beginPath();
+                ctx.arc(rx, ry, 5, 0, Math.PI * 2);
+                ctx.fillStyle = rg;
+                ctx.fill();
+            });
+
+            // 5. 3D Faceted Beveled 5-Pointed Sheriff Star
+            const starOuter = 112;
+            const starInner = 45;
+            const pts = [];
+            for (let i = 0; i < 10; i++) {
+                const r = i % 2 === 0 ? starOuter : starInner;
+                const a = -Math.PI / 2 + (i * Math.PI) / 5;
+                pts.push({ x: cx + Math.cos(a) * r, y: cy + 4 + Math.sin(a) * r });
+            }
+            // Draw 10 individual beveled facets for realistic 3D ridge look
+            for (let i = 0; i < 10; i++) {
+                const p1 = pts[i];
+                const p2 = pts[(i + 1) % 10];
+                ctx.beginPath();
+                ctx.moveTo(cx, cy + 4);
+                ctx.lineTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.closePath();
+                ctx.fillStyle = i % 2 === 0 ? '#e5e7eb' : '#6b7280';
+                ctx.fill();
+                ctx.strokeStyle = '#1f2937';
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+            }
+
+            // 6. Wide Sweeping 3D Chrome Bull Horns
+            function drawHorn(dir) {
+                ctx.save();
+                ctx.translate(cx, cy - 32);
+                ctx.scale(dir, 1);
+
+                const hornGrad = ctx.createLinearGradient(25, 10, 165, -45);
+                hornGrad.addColorStop(0, '#4b5563');
+                hornGrad.addColorStop(0.35, '#f9fafb');
+                hornGrad.addColorStop(0.65, '#6b7280');
+                hornGrad.addColorStop(1, '#f3f4f6');
+
+                ctx.beginPath();
+                ctx.moveTo(32, -8);
+                ctx.bezierCurveTo(85, -6, 130, -18, 164, -52);
+                ctx.bezierCurveTo(144, -10, 98, 14, 34, 18);
+                ctx.closePath();
+
+                ctx.shadowColor = 'rgba(0,0,0,0.7)';
+                ctx.shadowBlur = 8;
+                ctx.shadowOffsetY = 4;
+                ctx.fillStyle = hornGrad;
+                ctx.fill();
+
+                ctx.shadowColor = 'transparent';
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = '#111827';
+                ctx.stroke();
+
+                // Specular ridge along horn
+                ctx.beginPath();
+                ctx.moveTo(40, 2);
+                ctx.bezierCurveTo(90, 2, 128, -12, 156, -42);
+                ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.restore();
+            }
+            drawHorn(-1);
+            drawHorn(1);
+
+            // 7. Armored 3D Bull Head & Ears
+            // Ears
+            [-1, 1].forEach(dir => {
+                ctx.save();
+                ctx.translate(cx, cy - 12);
+                ctx.scale(dir, 1);
+                ctx.beginPath();
+                ctx.moveTo(42, -6);
+                ctx.lineTo(84, -2);
+                ctx.lineTo(66, 16);
+                ctx.lineTo(44, 12);
+                ctx.closePath();
+                ctx.fillStyle = makeChrome(40, -10, 85, 20);
+                ctx.fill();
+                ctx.strokeStyle = '#111827';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.restore();
+            });
+
+            // Main Bull Skull / Armor Plate
+            ctx.save();
+            ctx.shadowColor = 'rgba(0,0,0,0.85)';
+            ctx.shadowBlur = 12;
+            ctx.shadowOffsetY = 6;
+
+            ctx.beginPath();
+            ctx.moveTo(cx - 42, cy - 48);
+            ctx.lineTo(cx + 42, cy - 48);
+            ctx.lineTo(cx + 52, cy - 10);
+            ctx.lineTo(cx + 32, cy + 44);
+            ctx.lineTo(cx + 18, cy + 62);
+            ctx.lineTo(cx - 18, cy + 62);
+            ctx.lineTo(cx - 32, cy + 44);
+            ctx.lineTo(cx - 52, cy - 10);
+            ctx.closePath();
+            ctx.fillStyle = makeChrome(cx - 50, cy - 50, cx + 50, cy + 60);
+            ctx.fill();
+            ctx.shadowColor = 'transparent';
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#111827';
+            ctx.stroke();
+
+            // Forehead Armored V-Plate
+            ctx.beginPath();
+            ctx.moveTo(cx - 34, cy - 44);
+            ctx.lineTo(cx, cy - 22);
+            ctx.lineTo(cx + 34, cy - 44);
+            ctx.lineTo(cx + 24, cy - 10);
+            ctx.lineTo(cx, cy + 2);
+            ctx.lineTo(cx - 24, cy - 10);
+            ctx.closePath();
+            ctx.fillStyle = '#374151';
+            ctx.fill();
+            ctx.strokeStyle = '#d1d5db';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Armor Rivets on Forehead
+            [
+                [cx - 22, cy - 28], [cx + 22, cy - 28],
+                [cx - 14, cy - 14], [cx + 14, cy - 14],
+                [cx, cy - 8]
+            ].forEach(([rx, ry]) => {
+                ctx.beginPath();
+                ctx.arc(rx, ry, 2.2, 0, Math.PI * 2);
+                ctx.fillStyle = '#f9fafb';
+                ctx.fill();
+            });
+
+            // Fierce Angry Eyes
+            ctx.fillStyle = '#09090b';
+            ctx.beginPath();
+            ctx.moveTo(cx - 42, cy - 10);
+            ctx.lineTo(cx - 16, cy + 2);
+            ctx.lineTo(cx - 28, cy + 12);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(cx + 42, cy - 10);
+            ctx.lineTo(cx + 16, cy + 2);
+            ctx.lineTo(cx + 28, cy + 12);
+            ctx.closePath();
+            ctx.fill();
+
+            // Nose Bridge & Snout
+            ctx.beginPath();
+            ctx.moveTo(cx - 16, cy + 2);
+            ctx.lineTo(cx + 16, cy + 2);
+            ctx.lineTo(cx + 22, cy + 46);
+            ctx.lineTo(cx - 22, cy + 46);
+            ctx.closePath();
+            ctx.fillStyle = makeChrome(cx - 20, cy, cx + 20, cy + 50);
+            ctx.fill();
+            ctx.strokeStyle = '#1f2937';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Nostrils
+            ctx.fillStyle = '#09090b';
+            ctx.beginPath();
+            ctx.ellipse(cx - 10, cy + 50, 6.5, 4.5, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(cx + 10, cy + 50, 6.5, 4.5, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // 8. Bottom Hexagonal Metallic Nameplate: COWBOY MEMBERS
+            ctx.save();
+            ctx.shadowColor = 'rgba(0,0,0,0.85)';
+            ctx.shadowBlur = 14;
+            ctx.shadowOffsetY = 6;
+
+            // Outer Chrome Frame of Nameplate
+            ctx.beginPath();
+            ctx.moveTo(56, 212);
+            ctx.lineTo(304, 212);
+            ctx.lineTo(324, 256);
+            ctx.lineTo(304, 300);
+            ctx.lineTo(246, 300);
+            ctx.lineTo(232, 316);
+            ctx.lineTo(128, 316);
+            ctx.lineTo(114, 300);
+            ctx.lineTo(56, 300);
+            ctx.lineTo(36, 256);
+            ctx.closePath();
+            ctx.fillStyle = makeChrome(40, 210, 320, 320);
+            ctx.fill();
+            ctx.shadowColor = 'transparent';
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#111827';
+            ctx.stroke();
+
+            // Inner Dark Recessed Plaque
+            ctx.beginPath();
+            ctx.moveTo(63, 220);
+            ctx.lineTo(297, 220);
+            ctx.lineTo(313, 256);
+            ctx.lineTo(297, 292);
+            ctx.lineTo(242, 292);
+            ctx.lineTo(228, 307);
+            ctx.lineTo(132, 307);
+            ctx.lineTo(118, 292);
+            ctx.lineTo(63, 292);
+            ctx.lineTo(47, 256);
+            ctx.closePath();
+            ctx.fillStyle = '#18181b';
+            ctx.fill();
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = '#6b7280';
+            ctx.stroke();
+
+            // Side Rivets on Nameplate
+            [53, 307].forEach(rx => {
+                ctx.beginPath();
+                ctx.arc(rx, 256, 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#e5e7eb';
+                ctx.fill();
+            });
+
+            // 3D Embossed Chrome Text: COWBOY
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = '900 46px "Cinzel", serif';
+            ctx.fillStyle = '#000000';
+            ctx.fillText('COWBOY', cx + 2, 255);
+            const textGrad = ctx.createLinearGradient(0, 228, 0, 275);
+            textGrad.addColorStop(0, '#ffffff');
+            textGrad.addColorStop(0.5, '#d1d5db');
+            textGrad.addColorStop(1, '#6b7280');
+            ctx.fillStyle = textGrad;
+            ctx.fillText('COWBOY', cx, 253);
+
+            // 3D Embossed Chrome Text: MEMBERS
+            ctx.font = '900 18px "Noto Sans KR", sans-serif';
+            ctx.fillStyle = '#000000';
+            ctx.fillText('MEMBERS', cx + 1.5, 291);
+            ctx.fillStyle = textGrad;
+            ctx.fillText('MEMBERS', cx, 290);
+
+            ctx.restore();
+            ctx.restore();
+        }
+
+        // Render logos immediately on load
+        window.addEventListener('DOMContentLoaded', () => {
+            drawMetallicCowboyEmblem('auth-logo-canvas');
+            drawMetallicCowboyEmblem('header-logo-canvas');
+        });
+    </script>
+</body>
+</html>
